@@ -238,7 +238,6 @@ Se estructura el motor de eventos discretos sobre la base metodológica del Cap�
 
 **Variables de Estado del Sistema (SS):**
 - `poblacion[]` : Vector de individuals (Person structs)
-- `tiempo_actual`: Tiempo current en la simulación
 - `año_actual`: Año actual (para agregación de datos)
 - `eventos_por_tipo`: Diccionario para tracking de eventos
 

@@ -179,3 +179,24 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Julia
+deps/
+src/*.jl.cov
+src/*.jl*.mem
+/Manifest.toml
+
+# Generated data (simulation outputs)
+data/*.csv
+output/
+*.png
+
+# IDE
+.vscode/
+.idea/
+
+# Latex
+*.aux
+*.log
+*.synctex.gz
+*.toc
