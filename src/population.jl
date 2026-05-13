@@ -6,7 +6,7 @@ Management of population state, statistics aggregation, and data export.
 
 module PopulationManager
 
-using CSV, DataFrames, ..PersonModule, ..ProbabilityTables, ..SimulatorConfig
+using CSV, DataFrames, Statistics, ..PersonModule, ..ProbabilityTables, ..SimulatorConfig
 
 export Population, AnnualStatistics, PopulationManager, 
        initialize_population!, get_person, remove_person!, 
@@ -72,10 +72,10 @@ function initialize_population!(config::SimConfig)::Population
     )
     
     for _ in 1:config.population_size
-        age_days = Int64(floor(ProbabilityTables.sample_initial_age() * 365))
-        desired_children = ProbabilityTables.sample_initial_desired_children()
+        age_days = Int64(floor(ProbabilityTables.sample_initial_age() * SimulatorConfig.DAYS_PER_YEAR))
+        desired_children = ProbabilityTables.sample_desired_children()
         
-        sex = ProbabilityTables.sample_sex() == 1 ? PersonModule.male : PersonModule.female
+        sex = ProbabilityTables.sample_sex()
 
         person = PersonModule.Person(
             pop.next_id,
@@ -141,7 +141,7 @@ function aggregate_annual_statistics(pop::Population, year::Int64)::AnnualStatis
     ages_sorted = sort(ages_years)
     median_age = ages_sorted[div(n, 2) + 1]
     mean_age = sum(ages_sorted) / n
-    standard_age_error = 0.0 #TODO
+    std_age_error = std(ages_sorted)
     
     # Count by sex
     males = sum(p.sex == PersonModule.male for p in values(pop.people))
@@ -157,7 +157,7 @@ function aggregate_annual_statistics(pop::Population, year::Int64)::AnnualStatis
         pop.year_separations,
         Float64(median_age),
         mean_age,
-        standard_age_error,
+        std_age_error,
         sex_ratio
     )
     

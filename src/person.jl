@@ -46,7 +46,7 @@ mutable struct Person
         num_children::Int64=0,
         marital_status::MaritalStatus=single,
         waiting_days::Int64=0,
-        pregnant=False
+        pregnant::Bool=false
     )
         new(id, age_days, sex, partner_id, desired_children, 
             num_children, marital_status, waiting_days, pregnant)

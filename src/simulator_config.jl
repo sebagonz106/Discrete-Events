@@ -8,11 +8,17 @@ module SimulatorConfig
 
 export SimConfig, DEFAULT_CONFIG
 
+# Universal constants
+const DAYS_PER_YEAR = 360
+const DAYS_PER_MONTH = 30
+const GESTATION_PERIOD = 280  # 40 weeks
+const INITIAL_MAX_AGE = 100
+
 struct SimConfig
     """Configuration holder for simulation parameters."""
     population_size::Int64           # Total initial population
     simulation_years::Int64          # Total simulation duration (years)
-    total_days::Int64                # Computed: simulation_years * 365
+    total_days::Int64                # Computed: simulation_years * DAYS_PER_YEAR
     
     # Age parameters
     age_max::Int64                   # Maximum age in population
@@ -38,9 +44,8 @@ struct SimConfig
     )
         new(
             population_size,
-            sex_probability,
             simulation_years,
-            simulation_years * 365,
+            simulation_years * DAYS_PER_YEAR,
             age_max,
             fertility_age_min,
             fertility_age_max,
@@ -55,10 +60,5 @@ end
 # Default global configuration
 const DEFAULT_CONFIG = SimConfig()
 
-# Universal constants
-const DAYS_PER_YEAR = 360
-const DAYS_PER_MONTH = 30
-const GESTATION_PERIOD = 280  # 40 weeks
-const INITIAL_MAX_AGE = 100
 
 end # module

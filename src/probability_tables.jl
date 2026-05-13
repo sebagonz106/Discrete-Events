@@ -6,12 +6,12 @@ Probability distributions and lookup tables extracted from source documents.
 
 module ProbabilityTables
 
-using ..RandomGenerators, ..SimulatorConfig
+using ..RandomGenerators, ..SimulatorConfig, ..PersonModule
 
 export get_death_probability, get_pregnancy_probability, get_desired_children,
        get_want_partner_probability, get_couple_formation_probability,
        get_breakup_probability, get_rupture_waiting_period, sample_num_babies,
-       sample_initial_age, sample_initial_desired_children, sample_sex
+       sample_initial_age, sample_desired_children, sample_sex
 
 # ============================================================================
 # Death Probability by Age and Sex
@@ -35,14 +35,13 @@ const DEATH_PROB_FEMALE = Dict(
 )
 
 """
-    get_death_probability(age_years::Int64, is_male::Bool)::Float64
+    get_death_probability(age_years::Int64, sex::PersonModule.Sex)::Float64
     
 Return annual death probability for person of given age and sex.
 """
-function get_death_probability(age_years::Int64, is_male::Bool)::Float64
-    table = is_male ? DEATH_PROB_MALE : DEATH_PROB_FEMALE
-    #TODO: Use PersonModule.male
-    
+function get_death_probability(age_years::Int64, sex::PersonModule.Sex)::Float64
+    table = sex == PersonModule.male ? DEATH_PROB_MALE : DEATH_PROB_FEMALE
+
     for ((age_min, age_max), prob) in table
         if age_min <= age_years < age_max
             return prob
@@ -90,7 +89,7 @@ const DESIRED_CHILDREN_DIST = Dict(
     3 => 0.35,
     4 => 0.20,
     5 => 0.10,
-    6 => 0.05     # "6 or more"
+    50 => 0.05     # technically unlimited
 )
 
 """
@@ -99,7 +98,7 @@ const DESIRED_CHILDREN_DIST = Dict(
 Sample desired number of children from distribution.
 """
 function get_desired_children()::Int64
-    r = RandomGenerators.uniformDict(DESIRED_CHILDREN_DIST) # Normalization needed
+    r = RandomGenerators.uniform_dict(DESIRED_CHILDREN_DIST) # Normalization needed
     cumsum = 0.0
     
     for (num_children, prob) in sort(collect(DESIRED_CHILDREN_DIST))
@@ -109,7 +108,7 @@ function get_desired_children()::Int64
         end
     end
     
-    return 6  # fallback
+    return 50  # fallback
 end
 
 # ============================================================================
@@ -225,7 +224,7 @@ const BABIES_DISTRIBUTION = Dict(
 Sample number of babies born in a single birth event.
 """
 function sample_num_babies()::Int64
-    r = RandomGenerators.uniformDict(BABIES_DISTRIBUTION) # Normalization needed
+    r = RandomGenerators.uniform_dict(BABIES_DISTRIBUTION) # Normalization needed
     cumsum = 0.0
     
     for (num_babies, prob) in sort(collect(BABIES_DISTRIBUTION))
@@ -245,18 +244,18 @@ end
 """
     sample_initial_age()::Int64
     
-Draw initial age uniformly from [0, 100] years.
+Draw initial age uniformly from [0, INITIAL_MAX_AGE] years.
 """
 function sample_initial_age()::Int64
-    return RandomGenerators.uniformInt(0, SimulatorConfig.INITIAL_MAX_AGE + 1)
+    return RandomGenerators.uniform_int(0, SimulatorConfig.INITIAL_MAX_AGE)
 end
 
 """
-    sample_initial_desired_children()::Int64
+    sample_desired_children()::Int64
     
 Draw initial desired children from the population distribution.
 """
-function sample_initial_desired_children()::Int64
+function sample_desired_children()::Int64
     return get_desired_children()
 end
 
@@ -267,13 +266,12 @@ end
 const MALE_PROBABILITY = 0.5
 
 """
-    sample_sex()::Int64
+    sample_sex()::PersonModule.Sex
     
-Sample sex: 1 for male, 2 for female.
+Sample sex: PersonModule.male or PersonModule.female.
 """
-function sample_sex()::Int64
-    rand() < MALE_PROBABILITY ? 1 : 2
-    #TODO: Use PersonModule.male
+function sample_sex()::PersonModule.Sex
+    rand() < MALE_PROBABILITY ? PersonModule.male : PersonModule.female
 end
 
 end # module

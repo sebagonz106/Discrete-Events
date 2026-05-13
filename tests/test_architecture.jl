@@ -13,7 +13,7 @@ Pkg.activate(joinpath(@__DIR__, ".."))
 
 # Load the main module
 include("../src/population_sim.jl")
-using .PopulationSimiulator
+using .PopulationSimulator
 
 # ============================================================================
 # Test 1: Configuration
@@ -27,7 +27,7 @@ println("✓ Configuration loaded:")
 println("  - Population size: $(config.population_size) per sex")
 println("  - Simulation years: $(config.simulation_years)")
 println("  - Max age: $(config.age_max)")
-println("  - Days per simulation: $(SimulatorConfig.DAYS_PER_SIMULATION)")
+println("  - Days per simulation: $(config.total_days)")
 println()
 
 # ============================================================================
@@ -39,23 +39,23 @@ println("=" ^ 60)
 
 person1 = PersonModule.Person(
     1,
-    25 * 365,  # 25 years in days
+    25 * SimulatorConfig.DAYS_PER_YEAR,  # 25 years in days
     PersonModule.male,
     2          # desired children
 )
 
 person2 = PersonModule.Person(
     2,
-    22 * 365,  # 22 years in days
+    22 * SimulatorConfig.DAYS_PER_YEAR,  # 22 years in days
     PersonModule.female,
     3          # desired children
 )
 
 println("✓ Person 1 created:")
-println("  - ID: $(person1.id), Age: $(div(person1.age_days, 365)) years")
+println("  - ID: $(person1.id), Age: $(div(person1.age_days, SimulatorConfig.DAYS_PER_YEAR)) years")
 println("  - Sex: $(person1.sex), Marital: $(person1.marital_status)")
 println("✓ Person 2 created:")
-println("  - ID: $(person2.id), Age: $(div(person2.age_days, 365)) years")
+println("  - ID: $(person2.id), Age: $(div(person2.age_days, SimulatorConfig.DAYS_PER_YEAR)) years")
 println("  - Sex: $(person2.sex), Desired children: $(person2.desired_children)")
 println()
 
@@ -143,7 +143,7 @@ println("TEST 6: Probability Tables")
 println("=" ^ 60)
 
 println("✓ Sample probability lookups:")
-println("  - Death prob (30-year-old male): $(ProbabilityTables.get_death_probability(30, true))")
+println("  - Death prob (30-year-old male): $(ProbabilityTables.get_death_probability(30, PersonModule.male))")
 println("  - Pregnancy prob (28-year-old woman): $(ProbabilityTables.get_pregnancy_probability(28))")
 println("  - Want partner prob (35 years): $(ProbabilityTables.get_want_partner_probability(35))")
 println("  - Couple formation (age diff 8 years): $(ProbabilityTables.get_couple_formation_probability(8))")
@@ -186,5 +186,5 @@ println()
 println("=" ^ 60)
 println("✓ ALL TESTS PASSED")
 println("=" ^ 60)
-println("PASO 2 Architecture Implementation Validated Successfully")
+println("Architecture Implementation Validated Successfully")
 println()

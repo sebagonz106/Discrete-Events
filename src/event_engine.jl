@@ -72,7 +72,7 @@ end
 Event representing end-of-year aging and aggregation.
 
 # Fields
-- `time_days::Int64`: When the event occurs (every 365 days)
+- `time_days::Int64`: When the event occurs
 """
 struct YearEndEvent <: AbstractEvent
     time_days::Int64

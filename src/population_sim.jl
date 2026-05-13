@@ -91,26 +91,63 @@ mutable struct SimulationState
     population::PopulationManager.Population
     event_queue::EventEngine.EventQueue
     
-    # Annual counters
-    counters_births::Int64
-    counters_deaths::Int64
-    counters_marriages::Int64
-    counters_separations::Int64
-    
     logger::Logger
 end
 
-function _get_current_year_ending(current_day::Int32)::Int32
-    div(current_day, SimulatorConfig.DAYS_PER_YEAR) + SimulatorConfig.DAYS_PER_YEAR
+# Utility functions
+# ============================================================================================================================
+
+function _get_current_year_ending(current_day::Int64)::Int64
+    (div(current_day, SimulatorConfig.DAYS_PER_YEAR) + 1) * SimulatorConfig.DAYS_PER_YEAR
 end
 
-function _get_current_year_remainig_days(current::Int32)::Int32
+function _get_current_year_remainig_days(current::Int64)::Int64
     _get_current_year_ending(current) - current
 end
 
-function _get_current_year_remainig_months(current::Int32)::Int32
+function _get_current_year_remainig_months(current::Int64)::Int64
     div(_get_current_year_remainig_days(current), SimulatorConfig.DAYS_PER_MONTH)
 end
+
+"""
+    _schedule_year_partner_search!(person_id::Int64, state::SimulationState)::Nothing
+
+Schedules currrent year's partner searches for a person (person_id)
+"""
+function _schedule_year_partner_search!(person_id::Int64, state::SimulationState)::Nothing
+    person = PopulationManager.get_person(state.population, person_id)
+    if person === nothing
+        return
+    end
+    age_years = div(person.age_days, SimulatorConfig.DAYS_PER_YEAR)
+
+    # Begin looking for a couple once a month for the remaining months in the current year
+    if person.partner_id === nothing &&
+       age_years >= state.config.fertility_age_min
+        
+        if person.sex == PersonModule.female &&
+           age_years < state.config.fertility_age_max
+            return # marriages over this age are insignificant to our population development
+        end
+
+        p_wants_partner = ProbabilityTables.get_want_partner_probability(age_years)   
+        total_months = SimulatorConfig.DAYS_PER_YEAR / SimulatorConfig.DAYS_PER_MONTH
+        days_per_month = SimulatorConfig.DAYS_PER_MONTH
+        next_month = floor((state.current_time_days % SimulatorConfig.DAYS_PER_YEAR) / days_per_month) + 1
+            
+        # Partner search is tried monthly the rest of the year through PartnerSearchEvent
+        for i in next_month:total_months
+            if rand() < p_wants_partner
+                # Schedule partner search randomly within this month
+                t_search = state.current_time_days + uniform_int((i-1) * days_per_month + 1, i * days_per_month)
+                push!(state.event_queue.heap, EventEngine.PartnerSearchEvent(t_search, person_id))
+                log_event(state.logger, "  → Partner search: Person #$person_id")
+            end
+        end
+    end
+end
+
+# ============================================================================================================================
 
 """
     initialize_simulation(config::SimConfig)::SimulationState
@@ -140,7 +177,6 @@ function initialize_simulation(config::SimConfig)::SimulationState
         0,
         pop,
         queue,
-        0, 0, 0, 0,
         Logger(config.verbose_logging)
     )
     
@@ -205,23 +241,18 @@ end
 
 CENTRAL HUB: Evaluate all vital events for all persons annually.
 - Assess deaths for each person
-- Assess pregnancies for couples
+- Assess pregnancy attempts for couples
 - Assess couple breakups
 - Assess partner searches for singles
 """
 function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationState)::Nothing
-    #TODO: Update Annual Statistics (state.pop.annual_stats)
-
-    # Reset annual counters
-    state.counters_births = 0
-    state.counters_deaths = 0
-    state.counters_marriages = 0
-    state.counters_separations = 0
     
     # Collect all people
-    person_ids = collect(keys(state.population.people))
+    person_ids = collect(keys(state.population.people))  
     
-    #TODO: run through women (woman_ids) once deaths are dealt with
+    # Save auxiliar values
+    months = SimulatorConfig.DAYS_PER_YEAR / SimulatorConfig.DAYS_PER_MONTH
+    days_per_month = SimulatorConfig.DAYS_PER_MONTH
 
     # Evaluate all persons
     for person_id in person_ids
@@ -234,12 +265,11 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
         # 1. ASSESS DEATH
         # ========================
         age_years = div(person.age_days, SimulatorConfig.DAYS_PER_YEAR)
-        is_male = person.sex == PersonModule.male
-        death_prob = ProbabilityTables.get_death_probability(age_years, is_male)
+        death_prob = ProbabilityTables.get_death_probability(age_years, person.sex)
         
         if rand() < death_prob
             # Schedule death randomly within this year
-            t_death = state.current_time_days + uniformInt(1,365)
+            t_death = state.current_time_days + uniform_int(1, SimulatorConfig.DAYS_PER_YEAR)
             push!(state.event_queue.heap, EventEngine.DeathEvent(t_death, person_id))
         end
         
@@ -255,19 +285,18 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
             
             partner = PopulationManager.get_person(state.population, person.partner_id)
             
-            #TODO: Refactor so that a PregnancyAttemptEvent occurs monthly in the following year following menstrual cycle    
-            
-            #TODO: Move following logic to pregnancy attempt event 
+            # A PregnancyAttemptEvent is sheduled monthly in the following year (following menstrual cycle)
             if partner !== nothing && partner.num_children < partner.desired_children
-                preg_prob = ProbabilityTables.get_pregnancy_probability(age_years)
-                
-                if rand() < preg_prob
-                    # Will give birth in ~280 days
-                    num_babies = ProbabilityTables.sample_num_babies()
-                    t_birth = state.current_time_days + SimulatorConfig.GESTATION_PERIOD + uniformInt(-60, 0) # account for early born babies
-                    push!(state.event_queue.heap, EventEngine.BirthEvent(t_birth, person_id, num_babies))
-                    log_event(state.logger, "  → Pregnancy: Woman #$person_id → birth in ~280 days ($num_babies babies expected)")
+                for i in 1:months
+                    attempt = state.current_time_days + uniform_int((i-1) * days_per_month + 1, i * days_per_month)
+                    push!(state.event_queue.heap, EventEngine.PregnancyAttemptEvent(attempt, person_id))
+                    log_event(state.logger, "  → Pregnancy Attempt Scheduled: Woman #$person_id")
                 end
+                
+                # another way
+                # for day in (days_per_month + 1):days_per_month:SimulatorConfig.DAYS_PER_YEAR
+                #     attempt = uniformInt(day - days_per_month, day)
+                # end
             end
         end
         
@@ -279,7 +308,7 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
             
             if rand() < breakup_prob
                 # Schedule separation randomly within this year
-                t_sep = state.current_time_days + rand(1:365)
+                t_sep = state.current_time_days + rand(1:SimulatorConfig.DAYS_PER_YEAR)
                 push!(state.event_queue.heap, EventEngine.SeparationEvent(t_sep, person_id))
                 log_event(state.logger, "  → Breakup scheduled: Person #$person_id")
             end
@@ -288,22 +317,9 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
         # ========================
         # 4. ASSESS PARTNER SEARCH (if single woman, fertile, wants partner)
         # ========================
-        if person.sex == PersonModule.female &&
-           person.partner_id === nothing &&
-           person.marital_status == PersonModule.single &&
-           age_years >= state.config.fertility_age_min &&
-           age_years < state.config.fertility_age_max # marriages over this age are insignificant to our population development
-            
-            p_wants_partner = ProbabilityTables.get_want_partner_probability(age_years)
-            
-            #TODO: Refactor so a partner search is conducted monthly through PartnerSearchEvent
-
-            if rand() < p_wants_partner
-                # Schedule partner search randomly within this year
-                t_search = state.current_time_days + rand(1:365)
-                push!(state.event_queue.heap, EventEngine.PartnerSearchEvent(t_search, person_id))
-                log_event(state.logger, "  → Partner search: Woman #$person_id")
-            end
+        if person.sex == PersonModule.female && # To look thorugh men as well would double the chances a couple is formed       
+           person.marital_status == PersonModule.single 
+            _schedule_year_partner_search!(person_id, state)
         end
         
         # ========================
@@ -314,9 +330,14 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
     
     # Log annual statistics
     log_event(state.logger, "Year $(state.current_year): Pop=$(length(state.population.people)), " *
-              "B=$(state.counters_births), D=$(state.counters_deaths), " *
-              "M=$(state.counters_marriages), S=$(state.counters_separations)")
+              "B=$(state.population.year_births), D=$(state.population.year_deaths), " *
+              "M=$(state.population.year_marriages), S=$(state.population.year_separations)")
     flush_logs(state.logger, state.current_year)
+
+    # Save population annual statistics and reset counters
+    PopulationManager.aggregate_annual_statistics(state.population, state.current_year)
+
+    return nothing
 end
 
 """
@@ -326,7 +347,9 @@ Process death: remove from population, handle partner consequences.
 """
 function handle_death!(event::EventEngine.DeathEvent, state::SimulationState)::Nothing
     person = PopulationManager.get_person(state.population, event.person_id)
-    person === nothing && return
+    if person === nothing 
+        return # Already dead
+    end
     
     # If has partner, transition partner to widowed + waiting period
     if person.partner_id !== nothing
@@ -338,8 +361,8 @@ function handle_death!(event::EventEngine.DeathEvent, state::SimulationState)::N
             
             # Generate waiting period (exponential)
             age_partner_years = div(partner.age_days, SimulatorConfig.DAYS_PER_YEAR)
-            lambda = ProbabilityTables.get_rupture_waiting_period(age_partner_years)
-            t_fin_espera = event.time_days + RandomGenerators.exponential(lambda)
+            mean = ProbabilityTables.get_rupture_waiting_period(age_partner_years)
+            t_fin_espera = event.time_days + RandomGenerators.exponential_mean(mean)
             
             push!(state.event_queue.heap, EventEngine.EndWaitingPeriodEvent(t_fin_espera, partner.id))
             log_event(state.logger, "  → Death: Person #$(event.person_id), partner #$(partner.id) begins waiting")
@@ -348,8 +371,8 @@ function handle_death!(event::EventEngine.DeathEvent, state::SimulationState)::N
     
     # Remove from population
     delete!(state.population.people, event.person_id)
-    state.counters_deaths += 1
-    log_event(state.logger, "  → Death: Person #$(event.person_id) (age $(div(person.age_days, 365)))")
+    state.population.year_deaths += 1
+    log_event(state.logger, "  → Death: Person #$(event.person_id) (age $(div(person.age_days, SimulatorConfig.DAYS_PER_YEAR)) years)")
 end
 
 """
@@ -358,7 +381,39 @@ end
 Process pregnancy attempt: Checks if a pregnancy is achieved and schedules a birth.
 """
 function handle_pregnancy_attempt!(event::EventEngine.PregnancyAttemptEvent, state::SimulationState)::Nothing
-    #TODO: Implement
+    mother = PopulationManager.get_person(state.population, event.mother_id)
+    if mother === nothing
+        return  # Person already died
+    end
+    age_years = div(mother.age_days, SimulatorConfig.DAYS_PER_YEAR)
+
+    if mother.sex == PersonModule.female && 
+       mother.partner_id !== nothing &&
+       age_years >= state.config.fertility_age_min &&
+       age_years < state.config.fertility_age_max &&
+       mother.num_children < mother.desired_children &&
+       !mother.pregnant
+            
+        partner = PopulationManager.get_person(state.population, mother.partner_id)
+        if partner === nothing
+            return # mother widowed
+        end
+
+        if partner.num_children < partner.desired_children
+            preg_prob = ProbabilityTables.get_pregnancy_probability(age_years)
+
+            if rand() < preg_prob
+                # Will give birth in ~280 days
+                num_babies = ProbabilityTables.sample_num_babies()
+                t_birth = state.current_time_days + 
+                        SimulatorConfig.GESTATION_PERIOD + 
+                        uniform_int(-2 * SimulatorConfig.DAYS_PER_MONTH, 0) # account for early born babies
+                push!(state.event_queue.heap, EventEngine.BirthEvent(t_birth, event.mother_id, num_babies))
+                mother.pregnant = true
+                log_event(state.logger, "  → Pregnancy: Woman #$(event.mother_id) → birth in ~280 days ($num_babies babies expected)")
+            end
+        end
+    end
 end
 
 """
@@ -376,7 +431,7 @@ function handle_birth!(event::EventEngine.BirthEvent, state::SimulationState)::N
     
     for _ in 1:event.num_babies
         new_id = state.population.next_id
-        sex = ProbabilityTables.sample_sex() == 1 ? PersonModule.male : PersonModule.female
+        sex = ProbabilityTables.sample_sex()
         
         baby = PersonModule.Person(
             new_id,
@@ -389,10 +444,9 @@ function handle_birth!(event::EventEngine.BirthEvent, state::SimulationState)::N
         state.population.next_id += 1
         
         # Checks early death
-        is_male = sex == PersonModule.male
-        death_prob = ProbabilityTables.get_death_probability(0, is_male)
+        death_prob = ProbabilityTables.get_death_probability(0, sex)
         if rand() < death_prob
-            t_death = RandomGenerators.uniformInt(state.current_time_days, 
+            t_death = RandomGenerators.uniform_int(state.current_time_days, 
                                                   _get_current_year_ending(state.current_time_days))
             push!(state.event_queue.heap, EventEngine.DeathEvent(t_death, new_id))
             early_deaths += 1
@@ -400,6 +454,7 @@ function handle_birth!(event::EventEngine.BirthEvent, state::SimulationState)::N
     end
     
     mother.num_children += event.num_babies - early_deaths
+    mother.pregnant = false
     
     if mother.partner_id !== nothing
         partner = PopulationManager.get_person(state.population, mother.partner_id)
@@ -408,7 +463,7 @@ function handle_birth!(event::EventEngine.BirthEvent, state::SimulationState)::N
         end
     end
     
-    state.counters_births += event.num_babies # Births are accounted for
+    state.population.year_births += event.num_babies # Every birth is accounted for
     log_event(state.logger, "  → Birth: $(event.num_babies) babies born to mother #$(event.mother_id)")
 end
 
@@ -432,21 +487,21 @@ function handle_separation!(event::EventEngine.SeparationEvent, state::Simulatio
     if partner === nothing
         # Partner is dead
         person.partner_id = nothing
-        peerson.marital_status = PersonModule.widowed
+        person.marital_status = PersonModule.widowed
     else
         # Dissolve couple
         person.partner_id = partner.partner_id = nothing
         person.marital_status = partner.marital_status = PersonModule.divorced
     end
     
-    state.counters_separations += 1
+    state.population.year_separations += 1
     
     # Generate waiting period for both (exponential distribution)
     for p in [person, partner]
         if p !== nothing
             age_years = div(p.age_days, SimulatorConfig.DAYS_PER_YEAR)
-            lambda = ProbabilityTables.get_rupture_waiting_period(age_years)
-            t_fin_espera = event.time_days + RandomGenerators.exponential(lambda)
+            mean = ProbabilityTables.get_rupture_waiting_period(age_years)
+            t_fin_espera = event.time_days + RandomGenerators.exponential_mean(mean)
             
             push!(state.event_queue.heap, EventEngine.EndWaitingPeriodEvent(t_fin_espera, p.id))
         end
@@ -468,7 +523,7 @@ function handle_end_waiting!(event::EventEngine.EndWaitingPeriodEvent, state::Si
     
     person.marital_status = PersonModule.single
 
-    #TODO: Begin looking for a couple once a month for the remaining months in the current year
+    _schedule_year_partner_search!(event.person_id, state)
 
     log_event(state.logger, "  → End waiting: Person #$(event.person_id) available for partnership")
 end
@@ -519,7 +574,7 @@ function handle_partner_search!(event::EventEngine.PartnerSearchEvent, state::Si
                 candidate.partner_id = person.id
                 person.marital_status = candidate.marital_status = PersonModule.married
                 
-                state.counters_marriages += 1
+                state.population.year_marriages += 1
                 log_event(state.logger, "  → Marriage: #$(person.id) and #$(candidate.id)")
                 return  # Couple formed, exit
             end
