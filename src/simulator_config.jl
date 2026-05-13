@@ -25,6 +25,7 @@ struct SimConfig
     fertility_age_min::Int64         # Minimum female fertility age
     fertility_age_max::Int64         # Maximum female fertility age
     pair_bond_age_min::Int64         # Minimum age for partnership
+    age_distribution_interval::Int64 # Years between age distribution snapshots
     
     # Debug/Development flags
     validate_consistency::Bool       # Validate population state after events
@@ -38,6 +39,7 @@ struct SimConfig
         fertility_age_min::Int64=12,
         fertility_age_max::Int64=70,
         pair_bond_age_min::Int64=12,
+        age_distribution_interval::Int64=10,
         validate_consistency::Bool=false,
         verbose_logging::Bool=false,
         random_seed::Int64=42
@@ -50,6 +52,7 @@ struct SimConfig
             fertility_age_min,
             fertility_age_max,
             pair_bond_age_min,
+            age_distribution_interval,
             validate_consistency,
             verbose_logging,
             random_seed

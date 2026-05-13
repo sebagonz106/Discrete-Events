@@ -55,16 +55,19 @@ Simple logging system that can be disabled for production.
 mutable struct Logger
     enabled::Bool
     year_buffer::Vector{String}
+    all_logs::Vector{String}  # Persistent log of all events
     
     function Logger(enabled::Bool=false)
-        new(enabled, String[])
+        new(enabled, String[], String[])
     end
 end
 
 function log_event(logger::Logger, msg::String)::Nothing
     if logger.enabled
         push!(logger.year_buffer, msg)
+        push!(logger.all_logs, msg)
     end
+    return nothing
 end
 
 function flush_logs(logger::Logger, year::Int64)::Nothing
@@ -77,6 +80,16 @@ function flush_logs(logger::Logger, year::Int64)::Nothing
         end
         empty!(logger.year_buffer)
     end
+    return nothing
+end
+
+"""
+    get_all_logs(logger::Logger)::Vector{String}
+
+Retrieve all accumulated logs from the simulation.
+"""
+function get_all_logs(logger::Logger)::Vector{String}
+    return copy(logger.all_logs)
 end
 
 """
@@ -123,9 +136,10 @@ function _schedule_year_partner_search!(person_id::Int64, state::SimulationState
 
     # Begin looking for a couple once a month for the remaining months in the current year
     if person.partner_id === nothing &&
-       age_years >= state.config.fertility_age_min
+       age_years >= state.config.pair_bond_age_min
         
         if person.sex == PersonModule.female &&
+           age_years >= state.config.fertility_age_min &&
            age_years < state.config.fertility_age_max
             return # marriages over this age are insignificant to our population development
         end
@@ -184,13 +198,21 @@ function initialize_simulation(config::SimConfig)::SimulationState
 end
 
 """
-    run_simulation(config::SimConfig)::SimulationState
+    run_simulation(config::SimConfig; export_results::Bool=true)::SimulationState
 
 Run complete simulation with given configuration.
+Optionally exports results to CSV files with timestamp.
 """
-function run_simulation(config::SimConfig)::SimulationState
+function run_simulation(config::SimConfig; export_results::Bool=true)::SimulationState
     state = initialize_simulation(config)
     main_loop!(state)
+    
+    # Export results if requested
+    if export_results
+        timeline_logs = get_all_logs(state.logger)
+        PopulationManager.export_result_files(state.population, config, config.verbose_logging, timeline_logs)
+    end
+    
     return state
 end
 
@@ -335,7 +357,7 @@ function handle_year_end!(event::EventEngine.YearEndEvent, state::SimulationStat
     flush_logs(state.logger, state.current_year)
 
     # Save population annual statistics and reset counters
-    PopulationManager.aggregate_annual_statistics(state.population, state.current_year)
+    PopulationManager.aggregate_annual_statistics(state.population, state.current_year, state.config)
 
     return nothing
 end

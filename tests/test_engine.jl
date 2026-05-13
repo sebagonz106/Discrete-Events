@@ -18,21 +18,22 @@ const EE = PopulationSimulator.EventEngine
 
 # Small config for quick test
 config = Config.SimConfig(
-    population_size=50,
-    simulation_years=2,
-    age_max=80,
+    population_size=1000,
+    simulation_years=10,
+    age_max=100,
     fertility_age_min=12,
-    fertility_age_max=45,
+    fertility_age_max=50,
     pair_bond_age_min=12,
+    age_distribution_interval=5,
     validate_consistency=true,
-    verbose_logging=false,
+    verbose_logging=true,
     random_seed=12345
 )
 
 # Run simulation in try/catch to surface errors
 try
-    println("Initializing and running simulation (2 years, 50 people)...")
-    state = PS.run_simulation(config)
+    println("Initializing and running simulation (10 years, 1000 people)...")
+    state = PS.run_simulation(config; export_results=true)
     println("Simulation completed. Current day: ", state.current_time_days)
 
     # Basic assertions
@@ -49,8 +50,20 @@ try
         last = state.population.annual_stats[end]
         println("  population=", last.population_count, ", births=", last.births, ", deaths=", last.deaths)
     end
+    
+    # Check that results/ folder exists
+    results_dir = joinpath(@__DIR__, "..", "results")
+    if isdir(results_dir)
+        files = readdir(results_dir)
+        println("\n✓ Results folder created with files:")
+        for f in files
+            println("  - $f")
+        end
+    else
+        println("WARNING: results/ folder not found")
+    end
 
-    println("TEST 3 PASSED: Simulator engine ran without runtime errors.")
+    println("\nTEST 3 PASSED: Simulator engine ran without runtime errors and exported results.")
 catch e
     println("TEST 3 FAILED: Error during simulation run:")
     println(e)

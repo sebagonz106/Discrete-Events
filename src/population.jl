@@ -6,7 +6,7 @@ Management of population state, statistics aggregation, and data export.
 
 module PopulationManager
 
-using CSV, DataFrames, Statistics, ..PersonModule, ..ProbabilityTables, ..SimulatorConfig
+using CSV, DataFrames, Statistics, Dates, ..PersonModule, ..ProbabilityTables, ..SimulatorConfig
 
 export Population, AnnualStatistics, PopulationManager, 
        initialize_population!, get_person, remove_person!, 
@@ -44,6 +44,9 @@ mutable struct Population
     
     """Annual statistics over simulation."""
     annual_stats::Vector{AnnualStatistics}
+
+    """Age distribution snapshots keyed by year."""
+    age_snapshots::Dict{Int64, DataFrame}
     
     """Counters for current year."""
     year_births::Int64
@@ -68,6 +71,7 @@ function initialize_population!(config::SimConfig)::Population
         Dict{Int64, PersonModule.Person}(),
         1,
         Vector{AnnualStatistics}(),
+        Dict{Int64, DataFrame}(),
         0, 0, 0, 0
     )
     
@@ -133,7 +137,8 @@ end
     
 Calculate statistics for the given year.
 """
-function aggregate_annual_statistics(pop::Population, year::Int64)::AnnualStatistics
+function aggregate_annual_statistics(pop::Population, year::Int64,
+                                     config::SimConfig=SimulatorConfig.DEFAULT_CONFIG)::AnnualStatistics
     n = get_population_size(pop)
     
     # Calculate ages and medians
@@ -168,6 +173,11 @@ function aggregate_annual_statistics(pop::Population, year::Int64)::AnnualStatis
     pop.year_separations = 0
     
     push!(pop.annual_stats, stats)
+
+    # Persist age-distribution snapshots only at configured interval.
+    if config.age_distribution_interval > 0 && mod(year, config.age_distribution_interval) == 0
+        pop.age_snapshots[year] = build_age_distribution(pop, year)
+    end
     
     return stats
 end
@@ -233,22 +243,23 @@ function export_results_csv(pop::Population, output_path::String)::Nothing
 end
 
 """
-    export_age_distribution_csv(pop::Population, config::SimConfig, 
+    export_age_distribution_csv(pop::Population, config::SimConfig,
                                 output_path::String)::Nothing
-    
+
 Export age distributions (every 10 years) to CSV.
 """
 function export_age_distribution_csv(pop::Population, config::SimConfig,
                                      output_path::String)::Nothing
-    # This is called after simulation ends; reconstruct from snapshots
-    # Generates decadal age distributions
-    dfs = []
-    
-    for year in 0:10:config.simulation_years
-        if year < length(pop.annual_stats)
-            df_year = build_age_distribution(pop, year)
-            push!(dfs, df_year)
-        end
+    # Uses snapshots captured during simulation at configured interval.
+    dfs = DataFrame[]
+
+    interval = config.age_distribution_interval
+    years = sort(collect(keys(pop.age_snapshots)))
+    selected_years = [y for y in years if y >= 0 && y <= config.simulation_years &&
+                                     (interval <= 0 || mod(y, interval) == 0)]
+
+    for year in selected_years
+        push!(dfs, pop.age_snapshots[year])
     end
     
     if !isempty(dfs)
@@ -258,6 +269,69 @@ function export_age_distribution_csv(pop::Population, config::SimConfig,
     else
         println("No age distribution data available")
     end
+end
+
+"""
+    ensure_results_dir()::String
+    
+Ensure `results/` folder exists. Returns path to results directory.
+"""
+function ensure_results_dir()::String
+    results_dir = joinpath(@__DIR__, "..", "results")
+    if !isdir(results_dir)
+        mkdir(results_dir)
+    end
+    return results_dir
+end
+
+"""
+    generate_timestamp()::String
+    
+Generate timestamp string in format YYYYMMDD_HHMMSS.
+"""
+function generate_timestamp()::String
+    return Dates.format(now(), "yyyymmdd_HHMMSS")
+end
+
+"""
+    export_results_with_timestamp(pop::Population, config::SimConfig)::Tuple{String, String, String}
+    
+Export results, age distribution, and timeline with automatic timestamping.
+Returns tuple of (results_csv_path, age_csv_path, timeline_csv_path).
+"""
+function export_result_files(pop::Population, config::SimConfig, verbose::Bool=false,
+                            timeline_logs::Vector{String} = String[])::Tuple{String, String, String}
+    results_dir = ensure_results_dir()
+    timestamp = generate_timestamp()
+    
+    # Construct file paths
+    results_file = joinpath(results_dir, "$(timestamp)_results.csv")
+    age_file = joinpath(results_dir, "$(timestamp)_population_age.csv")
+    timeline_file = joinpath(results_dir, "$(timestamp)_timeline.csv")
+    
+    # Export results
+    export_results_csv(pop, results_file)
+    
+    # Export age distribution
+    export_age_distribution_csv(pop, config, age_file)
+    
+    # Export timeline (if logs provided)
+    if !isempty(timeline_logs)
+        df_timeline = DataFrame(
+            log_entry=timeline_logs
+        )
+        CSV.write(timeline_file, df_timeline)
+        println("Timeline exported to: $(timeline_file)")
+    end
+    
+    println("\nAll results exported to: $results_dir/")
+    println("  - Results: $(timestamp)_results.csv")
+    println("  - Age distribution: $(timestamp)_population_age.csv")
+    if !isempty(timeline_logs)
+        println("  - Timeline: $(timestamp)_timeline.csv")
+    end
+    
+    return (results_file, age_file, timeline_file)
 end
 
 end # module
