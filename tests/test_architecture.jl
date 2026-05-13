@@ -13,7 +13,7 @@ Pkg.activate(joinpath(@__DIR__, ".."))
 
 # Load the main module
 include("../src/population_sim.jl")
-using .population_sim
+using .PopulationSimiulator
 
 # ============================================================================
 # Test 1: Configuration

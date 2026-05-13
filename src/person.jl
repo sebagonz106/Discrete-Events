@@ -35,6 +35,7 @@ mutable struct Person
     num_children::Int64
     marital_status::MaritalStatus
     waiting_days::Int64
+    pregnant::Bool
 
     function Person(
         id::Int64,
@@ -44,10 +45,11 @@ mutable struct Person
         partner_id::Union{Int64, Nothing}=nothing,
         num_children::Int64=0,
         marital_status::MaritalStatus=single,
-        waiting_days::Int64=0
+        waiting_days::Int64=0,
+        pregnant=False
     )
         new(id, age_days, sex, partner_id, desired_children, 
-            num_children, marital_status, waiting_days)
+            num_children, marital_status, waiting_days, pregnant)
     end
 end
 

@@ -75,10 +75,12 @@ function initialize_population!(config::SimConfig)::Population
         age_days = Int64(floor(ProbabilityTables.sample_initial_age() * 365))
         desired_children = ProbabilityTables.sample_initial_desired_children()
         
+        sex = ProbabilityTables.sample_sex() == 1 ? PersonModule.male : PersonModule.female
+
         person = PersonModule.Person(
             pop.next_id,
             age_days,
-            ProbabilityTables.sample_sex() == 1 ? PersonModule.male : PersonModule.female,
+            sex,
             desired_children
         )
         

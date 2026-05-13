@@ -41,6 +41,7 @@ Return annual death probability for person of given age and sex.
 """
 function get_death_probability(age_years::Int64, is_male::Bool)::Float64
     table = is_male ? DEATH_PROB_MALE : DEATH_PROB_FEMALE
+    #TODO: Use PersonModule.male
     
     for ((age_min, age_max), prob) in table
         if age_min <= age_years < age_max
@@ -98,7 +99,7 @@ const DESIRED_CHILDREN_DIST = Dict(
 Sample desired number of children from distribution.
 """
 function get_desired_children()::Int64
-    r = RandomGenerators.uniformDict(DESIRED_CHILDREN_DIST)
+    r = RandomGenerators.uniformDict(DESIRED_CHILDREN_DIST) # Normalization needed
     cumsum = 0.0
     
     for (num_children, prob) in sort(collect(DESIRED_CHILDREN_DIST))
@@ -224,7 +225,7 @@ const BABIES_DISTRIBUTION = Dict(
 Sample number of babies born in a single birth event.
 """
 function sample_num_babies()::Int64
-    r = RandomGenerators.uniformDict(BABIES_DISTRIBUTION)
+    r = RandomGenerators.uniformDict(BABIES_DISTRIBUTION) # Normalization needed
     cumsum = 0.0
     
     for (num_babies, prob) in sort(collect(BABIES_DISTRIBUTION))
@@ -272,6 +273,7 @@ Sample sex: 1 for male, 2 for female.
 """
 function sample_sex()::Int64
     rand() < MALE_PROBABILITY ? 1 : 2
+    #TODO: Use PersonModule.male
 end
 
 end # module
