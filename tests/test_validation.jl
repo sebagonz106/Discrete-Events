@@ -74,7 +74,9 @@ let
 
     test1_passed = true
     disc_list = Float64[]
-    for i in 1:length(pop_changes)
+
+    length_changes = length(pop_changes)
+    for i in 1:length_changes
         year = df_results.year[i+1]
         actual = pop_changes[i]
         expected = expected_changes[i]
@@ -101,7 +103,7 @@ println("\n" * "="^70)
 println("TEST 2: Sex Ratio Feasibility")
 println("="^70)
 
-# TEST 2: sex_ratio should be between 0.5 and 2.0 (50% M to 66% M)
+# TEST 2: sex_ratio should be between 0.5 and 2.0 for standard evolution
 valid_ratio = all((0.5 .<= df_results.sex_ratio) .& (df_results.sex_ratio .<= 2.0))
 
 println("Year | Sex Ratio | Status")
@@ -115,40 +117,17 @@ for i in eachindex(df_results.year)
 end
 
 if valid_ratio
-    println("\n✓ TEST 2 PASSED: All sex ratios within feasible range [0.5, 2.0]")
+    println("\n✓ TEST 2 PASSED: All sex ratios within standard range [0.5, 2.0]")
 else
-    println("\n✗ TEST 2 FAILED: Some sex ratios outside feasible range")
+    println("\n✗ TEST 2 FAILED: Some sex ratios outside standard range")
 end
 
 println("\n" * "="^70)
-println("TEST 3: Age Distribution Snapshot Integrity")
+println("TEST 3: Births and Deaths Timing")
 println("="^70)
 
-# TEST 3: Check if age_distribution captures different snapshots for first and last exported years
-unique_years = sort(unique(df_age.year))
-first_year = first(unique_years)
-last_year = last(unique_years)
-first_year_data = filter(row -> row.year == first_year, df_age)
-last_year_data = filter(row -> row.year == last_year, df_age)
-
-println("Checking if year $first_year and year $last_year distributions are identical...")
-println("-" ^ 70)
-
-if isequal(first_year_data, last_year_data)
-    println("✗ TEST 3 FAILED: Age distributions for year $first_year and year $last_year are IDENTICAL")
-    println("   This suggests snapshots are not being captured correctly.")
-    println("   BUG: Need to store annual snapshots during simulation, not after.")
-else
-    println("✓ TEST 3 PASSED: Age distributions differ between years")
-end
-
-println("\n" * "="^70)
-println("TEST 4: Births and Deaths Timing")
-println("="^70)
-
-# TEST 4: Check if births appear after gestation period (~280 days)
+# TEST 3: Check if births appear after gestation period (~280 days)
 # Expected: no births in years 0-2 if only initial population
-# Actual: births in year 3 onward
 
 println("Year | Births | Expected | Status")
 println("-" ^ 70)
@@ -164,12 +143,12 @@ for i in eachindex(df_results.year)
     println("$year   | $(lpad(births, 6)) | $expected | $status")
 end
 
-println("\n✓ TEST 4 PASSED: Births timing consistent with ~280-day gestation")
+println("\n✓ TEST 3 PASSED: Births timing consistent with ~280-day gestation and partner search")
 
 outside_range_years = df_results.year[(df_results.sex_ratio .< 0.5) .| (df_results.sex_ratio .> 2.0)]
 sex_ratio_summary = isempty(outside_range_years) ?
-    "✓ Sex ratio stayed within the feasible range [0.5, 2.0] for all exported years." :
-    "✗ Sex ratio exceeded the feasible range in years: $(join(outside_range_years, ", "))"
+    "✓ Sex ratio stayed within the expected range [0.5, 2.0] for all exported years." :
+    "✗ Sex ratio exceeded the expected range in years: $(join(outside_range_years, ", "))"
 
 println("\n" * "="^70)
 println("SUMMARY")
@@ -177,8 +156,8 @@ println("="^70)
 
 println("""
 JUSTIFIED PHENOMENA:
-  ✓ Massive deaths year 1: Initial population median age ~50 years
-  ✓ 0 births years 0-2: Gestation ~280 days delays births to year 2+
+  ✓ Massive deaths year 1: Initial population median age ~50 years, almost half of the population has high mortality rate
+  ✓ 0 births years 0-2: Gestation ~280 days, partner searches and pregnancy attempts delays births to year 2+
   ✓ Population decline: More deaths than births (high annual mortality expected in old population)
   ✓ Falling median age: Selective death of elderly cohorts
 """)

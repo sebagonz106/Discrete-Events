@@ -74,24 +74,46 @@ function initialize_population!(config::SimConfig)::Population
         Dict{Int64, DataFrame}(),
         0, 0, 0, 0
     )
-    
-    for _ in 1:config.population_size
-        age_days = Int64(floor(ProbabilityTables.sample_initial_age() * SimulatorConfig.DAYS_PER_YEAR))
-        desired_children = ProbabilityTables.sample_desired_children()
-        
-        sex = ProbabilityTables.sample_sex()
 
-        person = PersonModule.Person(
-            pop.next_id,
-            age_days,
-            sex,
-            desired_children
-        )
-        
-        pop.people[pop.next_id] = person
-        pop.next_id += 1
+    if config.male_population < 0 # Use birth sex distribution
+        for _ in 1:config.population_size
+            age_days = Int64(floor(ProbabilityTables.sample_initial_age() * SimulatorConfig.DAYS_PER_YEAR))
+            desired_children = ProbabilityTables.sample_desired_children()
+
+            sex = ProbabilityTables.sample_sex()
+
+            person = PersonModule.Person(
+                pop.next_id,
+                age_days,
+                sex,
+                desired_children
+            )
+
+            pop.people[pop.next_id] = person
+            pop.next_id += 1
+        end
+    else # Replicated logic for faster initialization
+        function increase_population(count::Int64, sex::PersonModule.Sex)
+            for _ in 1:count
+                age_days = Int64(floor(ProbabilityTables.sample_initial_age() * SimulatorConfig.DAYS_PER_YEAR))
+                desired_children = ProbabilityTables.sample_desired_children()
+
+                person = PersonModule.Person(
+                    pop.next_id,
+                    age_days,
+                    sex,
+                    desired_children
+                )
+
+                pop.people[pop.next_id] = person
+                pop.next_id += 1
+            end
+        end
+
+        increase_population(config.male_population, PersonModule.male)
+        increase_population(config.population_size - config.male_population, PersonModule.female)
     end
-    
+
     return pop
 end
 
@@ -299,9 +321,10 @@ end
 Write a minimal JSON file containing the selected simulation configuration.
 """
 function export_config_json(config::SimConfig, output_path::String)::Nothing
+    male_population_text = config.male_population < 0 ? "" : "\n\t\"male_population\": $(config.male_population),"
     json_text = """
 {
-  \"population_size\": $(config.population_size),
+  \"population_size\": $(config.population_size),$male_population_text
   \"simulation_years\": $(config.simulation_years),
   \"total_days\": $(config.total_days),
   \"age_max\": $(config.age_max),

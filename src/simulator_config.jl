@@ -17,6 +17,7 @@ const INITIAL_MAX_AGE = 100
 struct SimConfig
     """Configuration holder for simulation parameters."""
     population_size::Int64           # Total initial population
+    male_population::Int64           # Initial male population (set to -1 to use birth sex distribution)
     simulation_years::Int64          # Total simulation duration (years)
     total_days::Int64                # Computed: simulation_years * DAYS_PER_YEAR
     
@@ -34,6 +35,7 @@ struct SimConfig
     
     function SimConfig(;
         population_size::Int64=500,
+        male_population::Int64=-1,
         simulation_years::Int64=100,
         age_max::Int64=125,
         fertility_age_min::Int64=12,
@@ -42,10 +44,11 @@ struct SimConfig
         age_distribution_interval::Int64=10,
         validate_consistency::Bool=false,
         verbose_logging::Bool=false,
-        random_seed::Int64=42
+        random_seed::Int64=16
     )
         new(
             population_size,
+            male_population,
             simulation_years,
             simulation_years * DAYS_PER_YEAR,
             age_max,
@@ -62,6 +65,5 @@ end
 
 # Default global configuration
 const DEFAULT_CONFIG = SimConfig()
-
 
 end # module

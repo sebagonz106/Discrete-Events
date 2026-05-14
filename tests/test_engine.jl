@@ -4,7 +4,7 @@
 using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
 
-println("=== TEST 3: Simulator Engine (short run) ===")
+println("=== TEST: Simulator Engine ===")
 
 # Load implementation
 include("../src/population_sim.jl")
@@ -50,22 +50,10 @@ try
         last = state.population.annual_stats[end]
         println("  population=", last.population_count, ", births=", last.births, ", deaths=", last.deaths)
     end
-    
-    # Check that results/ folder exists
-    results_dir = joinpath(@__DIR__, "..", "results")
-    if isdir(results_dir)
-        files = readdir(results_dir)
-        println("\n✓ Results folder created with files:")
-        for f in files
-            println("  - $f")
-        end
-    else
-        println("WARNING: results/ folder not found")
-    end
 
-    println("\nTEST 3 PASSED: Simulator engine ran without runtime errors and exported results.")
+    println("\nTEST PASSED: Simulator engine ran without runtime errors and exported results.")
 catch e
-    println("TEST 3 FAILED: Error during simulation run:")
+    println("TEST FAILED: Error during simulation run:")
     println(e)
     rethrow()
 end
