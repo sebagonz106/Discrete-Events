@@ -294,13 +294,42 @@ function generate_timestamp()::String
 end
 
 """
+    export_config_json(config::SimConfig, output_path::String)::Nothing
+
+Write a minimal JSON file containing the selected simulation configuration.
+"""
+function export_config_json(config::SimConfig, output_path::String)::Nothing
+    json_text = """
+{
+  \"population_size\": $(config.population_size),
+  \"simulation_years\": $(config.simulation_years),
+  \"total_days\": $(config.total_days),
+  \"age_max\": $(config.age_max),
+  \"fertility_age_min\": $(config.fertility_age_min),
+  \"fertility_age_max\": $(config.fertility_age_max),
+  \"pair_bond_age_min\": $(config.pair_bond_age_min),
+  \"age_distribution_interval\": $(config.age_distribution_interval),
+  \"validate_consistency\": $(config.validate_consistency ? "true" : "false"),
+  \"verbose_logging\": $(config.verbose_logging ? "true" : "false"),
+  \"random_seed\": $(config.random_seed)
+}
+"""
+
+    open(output_path, "w") do io
+        write(io, json_text)
+    end
+
+    println("Config exported to: $(output_path)")
+end
+
+"""
     export_results_with_timestamp(pop::Population, config::SimConfig)::Tuple{String, String, String}
     
 Export results, age distribution, and timeline with automatic timestamping.
 Returns tuple of (results_csv_path, age_csv_path, timeline_csv_path).
 """
 function export_result_files(pop::Population, config::SimConfig, verbose::Bool=false,
-                            timeline_logs::Vector{String} = String[])::Tuple{String, String, String}
+                            timeline_logs::Vector{String} = String[])::Tuple{String, String, String, String}
     results_dir = ensure_results_dir()
     timestamp = generate_timestamp()
     
@@ -308,12 +337,16 @@ function export_result_files(pop::Population, config::SimConfig, verbose::Bool=f
     results_file = joinpath(results_dir, "$(timestamp)_results.csv")
     age_file = joinpath(results_dir, "$(timestamp)_population_age.csv")
     timeline_file = joinpath(results_dir, "$(timestamp)_timeline.csv")
+    config_file = joinpath(results_dir, "$(timestamp)_config.json")
     
     # Export results
     export_results_csv(pop, results_file)
     
     # Export age distribution
     export_age_distribution_csv(pop, config, age_file)
+
+    # Export configuration snapshot
+    export_config_json(config, config_file)
     
     # Export timeline (if logs provided)
     if !isempty(timeline_logs)
@@ -327,11 +360,12 @@ function export_result_files(pop::Population, config::SimConfig, verbose::Bool=f
     println("\nAll results exported to: $results_dir/")
     println("  - Results: $(timestamp)_results.csv")
     println("  - Age distribution: $(timestamp)_population_age.csv")
+    println("  - Config: $(timestamp)_config.json")
     if !isempty(timeline_logs)
         println("  - Timeline: $(timestamp)_timeline.csv")
     end
     
-    return (results_file, age_file, timeline_file)
+    return (results_file, age_file, timeline_file, config_file)
 end
 
 end # module
