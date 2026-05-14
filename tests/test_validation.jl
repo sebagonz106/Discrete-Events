@@ -16,7 +16,7 @@ println("VALIDATION TESTS: Simulation Results")
 println("=" ^ 70)
 
 # Load latest timestamped results
-results_dir = joinpath(@__DIR__, "..", "results")
+results_dir = joinpath(@__DIR__, "..", "individual-results")
 
 function extract_timestamp(filename::String)
     match_result = match(r"(\d{8}_\d{6})", filename)

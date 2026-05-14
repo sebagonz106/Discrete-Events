@@ -299,7 +299,7 @@ end
 Ensure `results/` folder exists. Returns path to results directory.
 """
 function ensure_results_dir()::String
-    results_dir = joinpath(@__DIR__, "..", "results")
+    results_dir = joinpath(@__DIR__, "..", "individual-results")
     if !isdir(results_dir)
         mkdir(results_dir)
     end
