@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260514_150815",
+  "experiment_name": "Population Evolution (10 years)",
+  "description": "Simulation of population evolution over 10 years with fixed parameters. Each run varies due to stochastic events (births, deaths). Results show mean and standard error across multiple runs.",
+  "num_simulations": 5,
+  "seed": null,
+  "simulation_config": {
+    "population_size": 500,
+    "male_population": 250,
+    "fertility_age_min": 15,
+    "fertility_age_max": 49,
+    "simulation_years": 10,
+    "age_max": 100,
+    "age_distribution_interval": 2
+  },
+  "extra_parameters": {
+    "experiment_type": "simple_evolution"
+  }
+}

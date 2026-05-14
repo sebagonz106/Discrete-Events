@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260514_141745",
+  "experiment_name": "Parameter Sensitivity: Population Size",
+  "description": "Comparison of how initial population size affects population dynamics. Measures final population, sex ratio, average age, and growth rate. Each point represents mean across multiple runs with error bars (standard error).",
+  "num_simulations": 3,
+  "seed": 777,
+  "simulation_config": {
+    "population_size": 500,
+    "male_population": 250,
+    "fertility_age_min": 15,
+    "fertility_age_max": 49,
+    "simulation_years": 10,
+    "age_max": 100,
+    "age_distribution_interval": 5
+  },
+  "extra_parameters": {
+    "varied_parameter": "population_size",
+    "experiment_type": "parameter_comparison",
+    "parameter_values": ["100", "300", "500", "800", "1200"]
+  }
+}

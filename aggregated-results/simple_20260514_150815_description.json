@@ -1,0 +1,16 @@
+{
+  "experiment_description": "Simulation of population evolution over 10 years with fixed parameters. Each run varies due to stochastic events (births, deaths). Results show mean and standard error across multiple runs.",
+  "experiment_name": "Population Evolution (10 years)",
+  "parameters": {
+    "simulation_years": 10,
+    "num_simulations": 5,
+    "population_size": 500
+  },
+  "axes": {
+    "x": "year",
+    "y_columns": ["population_mean", "sex_ratio_mean", "avg_age_mean"],
+    "error_columns": ["population_se", "sex_ratio_se", "avg_age_se"]
+  },
+  "data_file": "simple_20260514_150815_results.csv",
+  "type": "simple_evolution"
+}

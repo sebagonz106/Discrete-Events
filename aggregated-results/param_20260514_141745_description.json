@@ -1,0 +1,18 @@
+{
+  "experiment_description": "Comparison of how initial population size affects population dynamics. Measures final population, sex ratio, average age, and growth rate. Each point represents mean across multiple runs with error bars (standard error).",
+  "experiment_name": "Parameter Sensitivity: Population Size",
+  "parameters": {
+    "varied_parameter": "population_size",
+    "simulation_years": 10,
+    "num_simulations": 3,
+    "parameter_values": [100, 300, 500, 800, 1200]
+  },
+  "axes": {
+    "x": "population_size",
+    "y_columns": ["population_final_mean", "sex_ratio_final_mean", "avg_age_final_mean", "growth_rate_mean"],
+    "error_columns": ["population_final_se", "sex_ratio_final_se", "avg_age_final_se", "growth_rate_se"],
+    "x_label": "population_size"
+  },
+  "data_file": "20260514_141745_results.csv",
+  "type": "parameter_comparison"
+}

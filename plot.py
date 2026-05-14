@@ -8,7 +8,8 @@ plots for population, sex ratio, and age metrics.
 Usage:
     python plot.py --type simple --plot population
     python plot.py --type param --plot sratio
-    python plot.py --plot age  (defaults to simple)
+    python plot.py --plot age  (type defaults to simple)
+    python plot py --type param (plot defaults to population)
 """
 
 import argparse
@@ -17,6 +18,9 @@ import json
 import sys
 from pathlib import Path
 from typing import Tuple, Optional
+import textwrap
+import re
+from datetime import datetime
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -32,6 +36,10 @@ def find_latest_experiment(experiment_type: str) -> Tuple[str, str]:
     """
     Find the latest experiment results by TIMESTAMP in aggregated-results/.
 
+    Identification is done purely by filename using the pattern:
+        {experiment_type}_{TIMESTAMP}_*.csv
+    where TIMESTAMP is expected in the format YYYYMMDD_HHMMSS.
+
     Args:
         experiment_type: 'simple' or 'param'
 
@@ -46,36 +54,35 @@ def find_latest_experiment(experiment_type: str) -> Tuple[str, str]:
     if not aggregated_dir.exists():
         raise FileNotFoundError(f"Directory '{aggregated_dir}' not found.")
 
-    # List all files
-    files = list(aggregated_dir.glob("*_results.csv"))
+    # Match files that start with the experiment_type prefix and end with _results.csv
+    pattern = re.compile(rf'^{re.escape(experiment_type)}_(\d{{8}}_\d{{6}}).*_results\.csv$')
 
-    if not files:
-        raise FileNotFoundError(f"No results files found in {aggregated_dir}")
-
-    # Filter by experiment type (in description.json)
-    matching_files = []
-    for results_file in files:
-        timestamp = results_file.stem.split("_results")[0]
-        description_file = aggregated_dir / f"{timestamp}_description.json"
-
-        if not description_file.exists():
+    candidates = []
+    for p in aggregated_dir.iterdir():
+        if not p.is_file():
             continue
+        m = pattern.match(p.name)
+        if m:
+            ts_str = m.group(1)
+            try:
+                ts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
+            except ValueError:
+                # fallback to file mtime if timestamp is malformed
+                ts = datetime.fromtimestamp(p.stat().st_mtime)
+            candidates.append((p, ts_str, ts))
 
-        with open(description_file) as f:
-            desc = json.load(f)
-            if desc.get("type") == experiment_type:
-                matching_files.append((results_file, description_file, description_file.stat().st_mtime))
+    if not candidates:
+        raise FileNotFoundError(f"No {experiment_type} experiment results found in {aggregated_dir}")
 
-    if not matching_files:
-        raise FileNotFoundError(
-            f"No {experiment_type} experiment found in {aggregated_dir}"
-        )
+    # Choose the candidate with the newest timestamp
+    candidates.sort(key=lambda x: x[2], reverse=True)
+    latest_path, latest_ts_str, _ = candidates[0]
 
-    # Sort by modification time and get the latest
-    matching_files.sort(key=lambda x: x[2], reverse=True)
-    latest_results, latest_description, _ = matching_files[0]
+    # Compose expected description file path for the same timestamp (may or may not exist)
+    # Description files include the experiment prefix, e.g. 'param_TIMESTAMP_description.json'
+    description_path = aggregated_dir / f"{experiment_type}_{latest_ts_str}_description.json"
 
-    return str(latest_results), str(latest_description)
+    return str(latest_path), str(description_path)
 
 
 def load_results(results_csv: str) -> pd.DataFrame:
@@ -85,15 +92,46 @@ def load_results(results_csv: str) -> pd.DataFrame:
 
 def load_description(description_json: str) -> dict:
     """Load experiment description JSON."""
+    desc_path = Path(description_json)
+    if not desc_path.exists():
+        return {}
     with open(description_json) as f:
         return json.load(f)
+
+
+def _format_description_text(description: dict, width: int = 60) -> str:
+    """Format the description dict into a short multi-line string for the verbose plot."""
+    lines = []
+    name = description.get("experiment_name") or description.get("experiment")
+    if name:
+        lines.append(str(name))
+    desc = description.get("experiment_description") or description.get("description")
+    if desc:
+        # Wrap long description
+        wrapped = textwrap.fill(str(desc), width=width)
+        lines.append(wrapped)
+    params = description.get("parameters")
+    if params and isinstance(params, dict):
+        # show a compact params line
+        params_items = [f"\n{k}={v}" for k, v in params.items() if k in ("num_simulations", "simulation_years")]
+        if params_items:
+            lines.append(
+                textwrap.fill("; ".join(params_items), width=width)
+            )
+
+    # Fallback: if nothing found, show full JSON truncated
+    if not lines and description:
+        lines.append(textwrap.fill(json.dumps(description), width=width))
+
+    return "\n\n".join(lines)
 
 
 def plot_population(
     results_df: pd.DataFrame,
     description: dict,
     experiment_type: str,
-    save_path: Optional[str] = None
+    save_path: Optional[str] = None,
+    verbose_save_path: Optional[str] = None
 ) -> None:
     """
     Plot population (total, males, females) with error bars.
@@ -163,6 +201,23 @@ def plot_population(
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Population plot saved to: {save_path}")
 
+    # Save a verbose version with the description box if requested
+    if verbose_save_path and description:
+        txt = None
+        try:
+            text = _format_description_text(description)
+            txt = ax.text(
+                0.01, 0.02, text,
+                transform=ax.transAxes,
+                ha='left', va='bottom', fontsize=8,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.9)
+            )
+            plt.savefig(verbose_save_path, dpi=300, bbox_inches='tight')
+            print(f"✓ Verbose population plot saved to: {verbose_save_path}")
+        finally:
+            if txt is not None:
+                txt.remove()
+
     plt.show()
 
 
@@ -170,7 +225,8 @@ def plot_sex_ratio(
     results_df: pd.DataFrame,
     description: dict,
     experiment_type: str,
-    save_path: Optional[str] = None
+    save_path: Optional[str] = None,
+    verbose_save_path: Optional[str] = None
 ) -> None:
     """
     Plot sex ratio with error bars.
@@ -217,6 +273,22 @@ def plot_sex_ratio(
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Sex ratio plot saved to: {save_path}")
 
+    if verbose_save_path and description:
+        txt = None
+        try:
+            text = _format_description_text(description)
+            txt = ax.text(
+                0.98, 0.02, text,
+                transform=ax.transAxes,
+                ha='right', va='bottom', fontsize=8,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.9)
+            )
+            plt.savefig(verbose_save_path, dpi=300, bbox_inches='tight')
+            print(f"✓ Verbose sex-ratio plot saved to: {verbose_save_path}")
+        finally:
+            if txt is not None:
+                txt.remove()
+
     plt.show()
 
 
@@ -224,7 +296,8 @@ def plot_age(
     results_df: pd.DataFrame,
     description: dict,
     experiment_type: str,
-    save_path: Optional[str] = None
+    save_path: Optional[str] = None,
+    verbose_save_path: Optional[str] = None
 ) -> None:
     """
     Plot average age with error bars.
@@ -271,6 +344,22 @@ def plot_age(
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Age plot saved to: {save_path}")
 
+    if verbose_save_path and description:
+        txt = None
+        try:
+            text = _format_description_text(description)
+            txt = ax.text(
+                0.98, 0.02, text,
+                transform=ax.transAxes,
+                ha='right', va='bottom', fontsize=8,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.9)
+            )
+            plt.savefig(verbose_save_path, dpi=300, bbox_inches='tight')
+            print(f"✓ Verbose age plot saved to: {verbose_save_path}")
+        finally:
+            if txt is not None:
+                txt.remove()
+
     plt.show()
 
 
@@ -283,7 +372,7 @@ def main() -> None:
         "--type",
         choices=["simple", "param"],
         default="simple",
-        help="Experiment type (default: simple)"
+        help="Experiment type: 'simple' or 'param' (default: simple)"
     )
     parser.add_argument(
         "--plot",
@@ -306,17 +395,28 @@ def main() -> None:
         plots_dir = Path("plots")
         plots_dir.mkdir(exist_ok=True)
 
-        # Generate filename for saving
-        timestamp = Path(results_csv).stem.split("_results")[0]
-        save_filename = f"plots/{args.type}_{args.plot}_{timestamp}.png"
+        # Generate filename for saving (existing behavior)
+        header = Path(results_csv).stem.split("_results")[0]
+        save_filename = f"plots/{header}_{args.plot}.png"
 
-        # Route to appropriate plot function
+        # Also build the requested verbose filename using args.type and the timestamp
+        # extract timestamp from header (expected format: {type}_YYYYMMDD_HHMMSS)
+        ts_match = re.search(r"\d{8}_\d{6}", header)
+        if ts_match:
+            ts = ts_match.group(0)
+        else:
+            # fallback to current time
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        verbose_save_filename = f"plots/{args.type}_{ts}_{args.plot}_verbose.png"
+
+        # Route to appropriate plot function (pass verbose path)
         if args.plot == "population":
-            plot_population(results_df, description, args.type, save_filename)
+            plot_population(results_df, description, args.type, save_filename, verbose_save_filename)
         elif args.plot == "sratio":
-            plot_sex_ratio(results_df, description, args.type, save_filename)
+            plot_sex_ratio(results_df, description, args.type, save_filename, verbose_save_filename)
         elif args.plot == "age":
-            plot_age(results_df, description, args.type, save_filename)
+            plot_age(results_df, description, args.type, save_filename, verbose_save_filename)
 
         print(f"\n✓ Plot for '{args.plot}' completed successfully!")
 
