@@ -1,0 +1,18 @@
+{
+  "experiment_description": "Comparison of how initial population size affects population dynamics. Each point represents mean across multiple runs with error bars (standard error).",
+  "experiment_name": "Parameter Sensitivity: Population Size",
+  "parameters": {
+    "varied_parameter": "population_size",
+    "simulation_years": 100,
+    "num_simulations": 250,
+    "parameter_values": [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+  },
+  "axes": {
+    "x": "population_size",
+    "y_columns": ["population_final_mean", "sex_ratio_final_mean", "avg_age_final_mean", "growth_rate_mean"],
+    "error_columns": ["population_final_se", "sex_ratio_final_se", "avg_age_final_se", "growth_rate_se"],
+    "x_label": "population_size"
+  },
+  "data_file": "param_20260515_132622_results.csv",
+  "type": "parameter_comparison"
+}

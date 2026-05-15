@@ -34,22 +34,20 @@ Create a simple evolution experiment: population evolves with fixed parameters.
 """
 function create_simple_evolution_experiment(seed::Union{Int64, Nothing})::SimpleEvolutionExperiment
     config = ExperimentConfig(
-        "Population Evolution (10 years)",
-        5,
+        "Population Evolution (100 years)",
+        500,
         seed,
-        "Simulation of population evolution over 10 years with fixed parameters. " *
-        "Each run varies due to stochastic events (births, deaths). " *
+        "Simulation of population evolution over 100 years with fixed parameters. " *
+        "Used population_size=2000 with 0.5 uniform distribution. " *
         "Results show mean and standard error across multiple runs."
     )
     
     sim_config = SimConfig(
-        population_size = 500,
-        male_population = 250,
-        fertility_age_min = 15,
-        fertility_age_max = 49,
-        simulation_years = 10,
-        age_max = 100,
-        age_distribution_interval = 2
+        population_size = 2000,
+        fertility_age_min = 12,
+        fertility_age_max = 70,
+        simulation_years = 100,
+        age_max = 125
     )
     
     return SimpleEvolutionExperiment(config, sim_config)
@@ -58,34 +56,50 @@ end
 """
     create_parameter_comparison_experiment(seed::Union{Int64, Nothing})::ParameterComparisonExperiment
 
-Create a parameter comparison experiment: see how population_size affects outcomes.
-Run 3 simulations per parameter value for statistical relevance.
+Create a parameter comparison experiment.
+Run simulations per parameter value for statistical relevance.
 """
 function create_parameter_comparison_experiment(seed::Union{Int64, Nothing})::ParameterComparisonExperiment
-    config = ExperimentConfig(
+    pop_config = ExperimentConfig(
         "Parameter Sensitivity: Population Size",
-        3,
+        250,
         seed,
         "Comparison of how initial population size affects population dynamics. " *
-        "Measures final population, sex ratio, average age, and growth rate. " *
         "Each point represents mean across multiple runs with error bars (standard error)."
     )
     
-    base_sim_config = SimConfig(
-        population_size = 500,  # Will be varied
-        male_population = 250,
-        fertility_age_min = 15,
-        fertility_age_max = 49,
-        simulation_years = 10,
-        age_max = 100,
-        age_distribution_interval = 5
+    pop_base_sim_config = SimConfig(
+        fertility_age_min = 12,
+        fertility_age_max = 70,
+        simulation_years = 100,
+        age_max = 125
     )
     
+    pop_values = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+    
+    male_pop_config = ExperimentConfig(
+        "Parameter Sensitivity: Male Population Size",
+        250,
+        seed,
+        "Comparison of how initial male population size affects population dynamics. " *
+        "Each point represents mean across multiple runs with error bars (standard error)."
+    )
+    
+    male_pop_base_sim_config = SimConfig(
+        population_size = 2000,
+        fertility_age_min = 12,
+        fertility_age_max = 70,
+        simulation_years = 100,
+        age_max = 125
+    )
+    
+    male_pop_values = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+
     return ParameterComparisonExperiment(
-        config,
-        base_sim_config,
-        "population_size",
-        [100, 300, 500, 800, 1200]
+        male_pop_config,
+        male_pop_base_sim_config,
+        "male_population",
+        male_pop_values
     )
 end
 

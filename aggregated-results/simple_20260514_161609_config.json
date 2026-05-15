@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260514_161609",
+  "experiment_name": "Population Evolution (100 years)",
+  "description": "Simulation of population evolution over 100 years with fixed parameters. Used population_size=1000 and male_population=750. Results show mean and standard error across multiple runs.",
+  "num_simulations": 500,
+  "seed": 16,
+  "simulation_config": {
+    "population_size": 1000,
+    "male_population": 750,
+    "fertility_age_min": 12,
+    "fertility_age_max": 70,
+    "simulation_years": 100,
+    "age_max": 125,
+    "age_distribution_interval": 10
+  },
+  "extra_parameters": {
+    "experiment_type": "simple_evolution"
+  }
+}

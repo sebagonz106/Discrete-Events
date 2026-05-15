@@ -75,7 +75,7 @@ function initialize_population!(config::SimConfig)::Population
         0, 0, 0, 0
     )
 
-    if config.male_population < 0 # Use birth sex distribution
+    if config.male_population < 0 || config.male_population > config.population_size # Use birth sex distribution
         for _ in 1:config.population_size
             age_days = Int64(floor(ProbabilityTables.sample_initial_age() * SimulatorConfig.DAYS_PER_YEAR))
             desired_children = ProbabilityTables.sample_desired_children()

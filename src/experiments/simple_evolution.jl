@@ -128,9 +128,9 @@ function run(exp::SimpleEvolutionExperiment)::Bool
     aggregated_dir = ensure_aggregated_results_dir()
     timestamp = generate_timestamp()
     
-    println("Running $(config.num_simulations) simulations...")
-    println("Simulation years: $(sim_config.simulation_years)")
-    println()
+    # println("Running $(config.num_simulations) simulations...")
+    # println("Simulation years: $(sim_config.simulation_years)")
+    # println()
     
     # Store yearly metrics from all simulations
     all_sim_metrics = Vector{Dict{Int64, Dict{String, Float64}}}()
