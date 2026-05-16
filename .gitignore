@@ -195,6 +195,7 @@ src/*.jl*.mem
 *.log
 *.synctex.gz
 *.toc
+*.out
 
 # Individual experiment results
 individual-results/

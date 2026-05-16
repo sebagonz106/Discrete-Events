@@ -71,7 +71,7 @@ function create_parameter_comparison_experiment(seed::Union{Int64, Nothing})::Pa
     pop_base_sim_config = SimConfig(
         fertility_age_min = 12,
         fertility_age_max = 70,
-        simulation_years = 100,
+        simulation_years = 50,
         age_max = 125
     )
     
@@ -89,7 +89,7 @@ function create_parameter_comparison_experiment(seed::Union{Int64, Nothing})::Pa
         population_size = 2000,
         fertility_age_min = 12,
         fertility_age_max = 70,
-        simulation_years = 100,
+        simulation_years = 25,
         age_max = 125
     )
     
