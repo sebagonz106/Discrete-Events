@@ -104,19 +104,22 @@ println("TEST 2: Sex Ratio Feasibility")
 println("="^70)
 
 # TEST 2: sex_ratio should be between 0.5 and 2.0 for standard evolution
-valid_ratio = all((0.5 .<= df_results.sex_ratio) .& (df_results.sex_ratio .<= 2.0))
-
 println("Year | Sex Ratio | Status")
 println("-" ^ 70)
 
+valid_ratios = true
+
 for i in eachindex(df_results.year)
     year = df_results.year[i]
-    ratio = df_results.sex_ratio[i]
-    status = (0.5 <= ratio <= 2.0) ? "✓ OK" : "✗ OUT OF RANGE"
+    invalid_cond = df_results.population[i] == df_results.male_count[i]
+    ratio = invalid_cond ? 0.0 : df_results.male_count[i] / (df_results.population[i] - df_results.male_count[i])
+    valid = 0.5 <= ratio <= 2.0
+    status = valid ? "✓ OK" : "✗ OUT OF RANGE"
+    valid_ratios &= valid
     println("$year   | $(round(ratio, digits=3)) | $status")
 end
 
-if valid_ratio
+if valid_ratios
     println("\n✓ TEST 2 PASSED: All sex ratios within standard range [0.5, 2.0]")
 else
     println("\n✗ TEST 2 FAILED: Some sex ratios outside standard range")
@@ -144,11 +147,6 @@ for i in eachindex(df_results.year)
 end
 
 println("\n✓ TEST 3 PASSED: Births timing consistent with ~280-day gestation and partner search")
-
-outside_range_years = df_results.year[(df_results.sex_ratio .< 0.5) .| (df_results.sex_ratio .> 2.0)]
-sex_ratio_summary = isempty(outside_range_years) ?
-    "✓ Sex ratio stayed within the expected range [0.5, 2.0] for all exported years." :
-    "✗ Sex ratio exceeded the expected range in years: $(join(outside_range_years, ", "))"
 
 println("\n" * "="^70)
 println("SUMMARY")

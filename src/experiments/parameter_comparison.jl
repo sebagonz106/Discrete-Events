@@ -36,19 +36,13 @@ function extract_final_metrics(results_data::DataFrame, initial_pop::Float64)::D
     last_row = last(eachrow(results_data))
 
     population = Float64(last_row.population)
-    sex_ratio = hasproperty(last_row, :sex_ratio) ? Float64(last_row.sex_ratio) : 0.0
+    male_count = hasproperty(last_row, :male_count) ? Int64(last_row.male_count) : 0
     avg_age = hasproperty(last_row, :median_age) ? Float64(last_row.median_age) : 0.0
 
-    # Reconstruct males/females from sex_ratio = males / females
-    males = 0.0
-    females = 0.0
-    if sex_ratio > 0
-        females = population / (1.0 + sex_ratio)
-        males = population - females
-    else
-        females = population
-        males = 0.0
-    end
+    # Reconstruct males/females
+        males = male_count
+        females = population - male_count
+        sex_ratio = females == 0 ? 0.0 : males / females
 
     # Growth rate: (final - initial) / initial
     growth_rate = initial_pop > 0 ? (population - initial_pop) / initial_pop : 0.0
@@ -130,7 +124,9 @@ function run(exp::ParameterComparisonExperiment)::Bool
         growth_rate_mean = Float64[],
         growth_rate_se = Float64[],
         males_final_mean = Float64[],
-        females_final_mean = Float64[]
+        females_final_mean = Float64[],
+        males_final_se = Float64[],
+        females_final_se = Float64[]
     )
 
     # Iterate over parameter values
@@ -183,12 +179,12 @@ function run(exp::ParameterComparisonExperiment)::Bool
         sr_mean, _, sr_se = calculate_stats(sex_ratio_values)
         age_mean, _, age_se = calculate_stats(avg_age_values)
         gr_mean, _, gr_se = calculate_stats(growth_rate_values)
-        males_mean, _, _ = calculate_stats(males_values)
-        females_mean, _, _ = calculate_stats(females_values)
+        males_mean, _, m_se = calculate_stats(males_values)
+        females_mean, _, f_se = calculate_stats(females_values)
 
         push!(aggregated_results, (
             param_val, pop_mean, pop_se, sr_mean, sr_se, age_mean, age_se,
-            gr_mean, gr_se, males_mean, females_mean
+            gr_mean, gr_se, males_mean, females_mean, m_se, f_se
         ))
     end
 
@@ -219,7 +215,8 @@ function run(exp::ParameterComparisonExperiment)::Bool
         Dict(
             "experiment_type" => "parameter_comparison",
             "varied_parameter" => exp.param_to_vary,
-            "parameter_values" => exp.param_values
+            "parameter_values" => exp.param_values,
+            "seed" => exp.config.seed
         )
     )
     config_filepath = joinpath(aggregated_dir, "param_$(timestamp)_config.json")

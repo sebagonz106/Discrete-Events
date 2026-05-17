@@ -177,7 +177,9 @@ println("  - Population: $(stats.population_count)")
 println("  - Births: $(stats.births), Deaths: $(stats.deaths)")
 println("  - Marriages: $(stats.marriages), Separations: $(stats.separations)")
 println("  - Median age: $(stats.median_age), Mean age: $(round(stats.mean_age, digits=1))")
-println("  - Sex ratio (M/F): $(round(stats.sex_ratio, digits=3))")
+println("  - Sex ratio (M/F): $(round(stats.male_count == stats.population ? 0.0 : 
+                                    stats.male_count / (stats.population - stats.male_count), 
+                                    digits=3))")
 println()
 
 # ============================================================================

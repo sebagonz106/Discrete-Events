@@ -20,6 +20,7 @@ Aggregated statistics for a single year of simulation.
 mutable struct AnnualStatistics
     year::Int64
     population_count::Int64
+    male_count::Int64
     births::Int64
     deaths::Int64
     marriages::Int64
@@ -27,7 +28,6 @@ mutable struct AnnualStatistics
     median_age::Float64
     mean_age::Float64
     standard_age_error::Float64
-    sex_ratio::Float64  # males / females
 end
 
 """
@@ -172,20 +172,18 @@ function aggregate_annual_statistics(pop::Population, year::Int64,
     
     # Count by sex
     males = sum(p.sex == PersonModule.male for p in values(pop.people))
-    females = n - males
-    sex_ratio = females > 0 ? males / females : 0.0
     
     stats = AnnualStatistics(
         year,
         n,
+        males,
         pop.year_births,
         pop.year_deaths,
         pop.year_marriages,
         pop.year_separations,
         Float64(median_age),
         mean_age,
-        std_age_error,
-        sex_ratio
+        std_age_error
     )
     
     # Reset counters for next year
@@ -252,16 +250,18 @@ function export_results_csv(pop::Population, output_path::String)::Nothing
     df = DataFrame(
         year=Int64[s.year for s in pop.annual_stats],
         population=Int64[s.population_count for s in pop.annual_stats],
+        male_count=Int64[s.male_count for s in pop.annual_stats],
         births=Int64[s.births for s in pop.annual_stats],
         deaths=Int64[s.deaths for s in pop.annual_stats],
         marriages=Int64[s.marriages for s in pop.annual_stats],
         divorces=Int64[s.separations for s in pop.annual_stats],
-        median_age=Float64[s.median_age for s in pop.annual_stats],
-        sex_ratio=Float64[s.sex_ratio for s in pop.annual_stats]
+        median_age=Float64[s.median_age for s in pop.annual_stats]
     )
     
     CSV.write(output_path, df)
-    println("✓ Results exported to: $(output_path)")
+    # println("Results exported to: $(output_path)")
+
+    return nothing
 end
 
 """
@@ -287,10 +287,12 @@ function export_age_distribution_csv(pop::Population, config::SimConfig,
     if !isempty(dfs)
         result_df = vcat(dfs...)
         CSV.write(output_path, result_df)
-        println("Age distribution exported to: $(output_path)")
-    else
-        println("No age distribution data available")
+    #     println("Age distribution exported to: $(output_path)")
+    # else
+    #     println("No age distribution data available")
     end
+    
+    return nothing
 end
 
 """
@@ -312,7 +314,7 @@ end
 Generate timestamp string in format YYYYMMDD_HHMMSS.
 """
 function generate_timestamp()::String
-    return Dates.format(now(), "yyyymmdd_HHMMSS")
+    return Dates.format(now(), "yyyymmdd_HHMMSS_sss")
 end
 
 """
@@ -342,7 +344,9 @@ function export_config_json(config::SimConfig, output_path::String)::Nothing
         write(io, json_text)
     end
 
-    println("Config exported to: $(output_path)")
+    # println("Config exported to: $(output_path)")
+
+    return nothing
 end
 
 """
@@ -377,16 +381,16 @@ function export_result_files(pop::Population, config::SimConfig, verbose::Bool=f
             log_entry=timeline_logs
         )
         CSV.write(timeline_file, df_timeline)
-        println("Timeline exported to: $(timeline_file)")
+        # println("Timeline exported to: $(timeline_file)")
     end
     
-    println("\nAll results exported to: $results_dir/")
-    println("  - Results: $(timestamp)_results.csv")
-    println("  - Age distribution: $(timestamp)_population_age.csv")
-    println("  - Config: $(timestamp)_config.json")
-    if !isempty(timeline_logs)
-        println("  - Timeline: $(timestamp)_timeline.csv")
-    end
+    # println("\nAll results exported to: $results_dir/")
+    # println("  - Results: $(timestamp)_results.csv")
+    # println("  - Age distribution: $(timestamp)_population_age.csv")
+    # println("  - Config: $(timestamp)_config.json")
+    # if !isempty(timeline_logs)
+    #     println("  - Timeline: $(timestamp)_timeline.csv")
+    # end
     
     return (results_file, age_file, timeline_file, config_file)
 end

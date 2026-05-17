@@ -27,8 +27,7 @@ end
     extract_yearly_metrics(results_data::DataFrame)::Dict{Int64, Dict{String, Float64}}
 
 Extract population, sex ratio, and average age by year from exported `*_results.csv`.
-Uses `median_age` column as average age, and reconstructs males/females counts
-from `population` and `sex_ratio` when available.
+Uses `median_age` column as average age, and reconstructs males/females counts.
 Returns dict with year as key and dict of metrics as value.
 """
 function extract_yearly_metrics(results_data::DataFrame)::Dict{Int64, Dict{String, Float64}}
@@ -37,20 +36,13 @@ function extract_yearly_metrics(results_data::DataFrame)::Dict{Int64, Dict{Strin
     for row in eachrow(results_data)
         year = Int64(row.year)
         population = Float64(row.population)
-        sex_ratio = hasproperty(row, :sex_ratio) ? Float64(row.sex_ratio) : 0.0
+        male_count = hasproperty(row, :male_count) ? Int64(row.male_count) : 0
         avg_age = hasproperty(row, :median_age) ? Float64(row.median_age) : 0.0
 
-        # Reconstruct males/females from sex_ratio = males / females
-        males = 0.0
-        females = 0.0
-        if sex_ratio > 0
-            females = population / (1.0 + sex_ratio)
-            males = population - females
-        else
-            # If sex_ratio not available or zero, assume all population is females (fallback)
-            females = population
-            males = 0.0
-        end
+        # Reconstruct males/females
+        males = male_count
+        females = population - male_count
+        sex_ratio = females == 0 ? 0.0 : males / females
 
         results[year] = Dict(
             "population" => population,
@@ -177,7 +169,9 @@ function run(exp::SimpleEvolutionExperiment)::Bool
         avg_age_mean = Float64[],
         avg_age_se = Float64[],
         males_mean = Float64[],
-        females_mean = Float64[]
+        females_mean = Float64[],
+        males_se = Float64[],
+        females_se = Float64[]
     )
     
     for year in all_years
@@ -200,11 +194,11 @@ function run(exp::SimpleEvolutionExperiment)::Bool
         pop_mean, _, pop_se = calculate_stats(pop_values)
         sr_mean, _, sr_se = calculate_stats(sex_ratio_values)
         age_mean, _, age_se = calculate_stats(avg_age_values)
-        males_mean, _, _ = calculate_stats(males_values)
-        females_mean, _, _ = calculate_stats(females_values)
+        males_mean, _, males_se = calculate_stats(males_values)
+        females_mean, _, females_se = calculate_stats(females_values)
         
         push!(aggregated_results, (
-            year, pop_mean, pop_se, sr_mean, sr_se, age_mean, age_se, males_mean, females_mean
+            year, pop_mean, pop_se, sr_mean, sr_se, age_mean, age_se, males_mean, females_mean, males_se, females_se
         ))
     end
     

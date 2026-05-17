@@ -113,7 +113,7 @@ def _format_description_text(description: dict, width: int = 60) -> str:
     params = description.get("parameters")
     if params and isinstance(params, dict):
         # show a compact params line
-        params_items = [f"\n{k}={v}" for k, v in params.items() if k in ("num_simulations", "simulation_years")]
+        params_items = [f"\n{k}={v}" for k, v in params.items() if k in ("num_simulations", "simulation_years", "seed")]
         if params_items:
             lines.append(
                 textwrap.fill("; ".join(params_items), width=width)
@@ -149,7 +149,9 @@ def plot_population(
         pop_col = "population_mean"
         pop_se_col = "population_se"
         males_col = "males_mean"
+        males_se_col = "males_se"
         females_col = "females_mean"
+        females_se_col = "males_se"
         x_label = "Year"
     else:  # param
         # Get the x column name (the parameter name)
@@ -158,7 +160,9 @@ def plot_population(
         pop_col = "population_final_mean"
         pop_se_col = "population_final_se"
         males_col = "males_final_mean"
+        males_se_col = "males_final_se"
         females_col = "females_final_mean"
+        females_se_col = "females_final_se"
         x_label = axes.get("x_label", x_col)
 
     x_data = results_df[x_col]
@@ -174,7 +178,7 @@ def plot_population(
     # Males
     ax.errorbar(
         x_data, results_df[males_col],
-        yerr=None,  # No SEs for males
+        yerr=results_df[males_se_col],
         fmt="-s", linewidth=2, markersize=6,
         label="Males", color="#ff7f0e", capsize=5
     )
@@ -182,7 +186,7 @@ def plot_population(
     # Females
     ax.errorbar(
         x_data, results_df[females_col],
-        yerr=None,  # No SEs for females
+        yerr=results_df[females_se_col],
         fmt="-^", linewidth=2, markersize=6,
         label="Females", color="#2ca02c", capsize=5
     )
