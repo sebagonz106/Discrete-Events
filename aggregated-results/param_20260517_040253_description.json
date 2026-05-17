@@ -1,0 +1,19 @@
+{
+  "experiment_description": "Comparison of how initial male population size affects population dynamics. Each point represents mean across multiple runs with error bars (standard error).",
+  "experiment_name": "Parameter Sensitivity: Male Population Size",
+  "parameters": {
+    "varied_parameter": "male_population",
+    "simulation_years": 30,
+    "num_simulations": 250,
+    "parameter_values": [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000],
+    "seed": 16
+  },
+  "axes": {
+    "x": "male_population",
+    "y_columns": ["population_final_mean", "sex_ratio_final_mean", "avg_age_final_mean", "growth_rate_mean"],
+    "error_columns": ["population_final_se", "sex_ratio_final_se", "avg_age_final_se", "growth_rate_se"],
+    "x_label": "male_population"
+  },
+  "data_file": "param_20260517_040253_results.csv",
+  "type": "parameter_comparison"
+}

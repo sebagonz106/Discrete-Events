@@ -211,9 +211,9 @@ def plot_population(
         try:
             text = _format_description_text(description)
             txt = ax.text(
-                0.01, 0.02, text,
+                0.98, 0.02, text,
                 transform=ax.transAxes,
-                ha='left', va='bottom', fontsize=8,
+                ha='right', va='bottom', fontsize=8,
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.9)
             )
             plt.savefig(verbose_save_path, dpi=300, bbox_inches='tight')

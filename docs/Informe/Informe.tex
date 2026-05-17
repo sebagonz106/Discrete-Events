@@ -430,7 +430,7 @@ En las exportaciones CSV se guardaron la media $\bar{X}$ y el error estándar $\
 
 \section{Enfoque General}\label{sec:general_approach}
 
-Para resolver este problema se implementó un simulador basado en eventos discretos con arquitectura modular y extensible. Cada individuo en la población es representado como una entidad con atributos propios (edad, sexo, estado civil, etc.), siguiendo una arquitectura basada en agentes para explotar las bondades de la Programación Orientada a Objetos y reducir el número de contadores que pudieran entorpecer la legibilidad y extensibilidad del código. Se diseñó un sistema centralizado que ordena y ejecuta eventos en orden temporal usando una cola de prioridad (\texttt{MinHeap}), y un objeto que recoge las configuraciones seleccionadas (\texttt{SimConfig}) y que permite el uso de semillas aleatorias para reproducibilidad y de un logger para revisar el funcionamento evento a evento. Existe una separación clara entre simulación, experimentos y visualización que permite la modularidad con la que se concibió la imlementación.
+Para resolver este problema se implementó un simulador basado en eventos discretos con arquitectura modular y extensible. Cada individuo en la población es representado como una entidad con atributos propios (edad, sexo, estado civil, etc.), siguiendo una arquitectura basada en agentes para explotar las bondades de la Programación Orientada a Objetos y reducir el número de contadores que pudieran entorpecer la legibilidad y extensibilidad del código. Se diseñó un sistema centralizado que ordena y ejecuta eventos en orden temporal usando una cola de prioridad (\texttt{MinHeap}), y un objeto que recoge las configuraciones seleccionadas (\texttt{SimConfig}) y que permite el uso de semillas aleatorias para reproducibilidad y de un logger para revisar el funcionamento evento a evento. Existe una separación clara entre simulación, experimentos y visualización que permite la modularidad con la que se concibió la implementación.
 
 Para los distintos procesos estocásticos se utilizaron dos tipos de distribuciones utilizando métodos estándar de la transformada inversa descritos en el Capítulo \ref{ch:marco_teorico}:
 
@@ -451,7 +451,7 @@ El simulador se organiza en los siguientes componentes:
     \item[Configuración (\texttt{SimConfig}):] Define los parámetros iniciales de la simulación (población inicial, duración, etc.)
     \item[Motor de Eventos (\texttt{EventEngine}):] Gestiona los tipos de eventos y la cola de prioridad necesarios en la simulación
     \item[Gestor de Población (\texttt{PopulationManager}):] Mantiene el estado de la población y dirige el análisis estadístico de los resultados obtenidos al finalizar cada año (o período según las opciones seleccionadas), así como la exportación de estos resultados.
-    \item[Módulo de Persona (\texttt{PersonModule}):] Presenta enums necesarios y ofrece una interfaz ccomún a los individuos de la población.
+    \item[Módulo de Persona (\texttt{PersonModule}):] Presenta enums necesarios y ofrece una interfaz común a los individuos de la población.
     \item[Módulos estocásticos (\texttt{ProbabilityTables} y \texttt{RandomGenerators}):] Encargados de la generación de variables aleatorias y de la gestión de las distribuciones probabilísticas.
     \item[Dirección de la simulación (\texttt{PopulationSimulator}):] Dirige cada simulación individual orquestando el funcionamiento de cada uno de los componentes.
     \item[Graficador de resultados:] Archivo python que usa seaborn en matplotlib para graficar los resultados de los experimentos realizados, con varias opciones de gráficas.
@@ -482,7 +482,7 @@ En nuestro modelo, los eventos discretos son:
     \item \textbf{Fin de año}: un año se acaba, se calculan estadísticas y se planifican algunos eventos.
 \end{itemize}
 
-El estado de la simulación en cualquier instante $t$ se define por la colección de todos los individuos activos y sus atributos (e. g. edad, sexo, etado civil, número actual y deseado de hijos).
+El estado de la simulación en cualquier instante $t$ se define por la colección de todos los individuos activos y sus atributos (e. g. edad, sexo, estado civil, número actual y deseado de hijos).
 
 Las transiciones de estado ocurren cuando se ejecutan eventos. Para cada evento se evalúan las condiciones requeridas y se modifican los atributos relevantes del individuo o individuos involucrados. Al terminar estas acciones, añade de ser requerido y posible (según la distribución de probabilidad pertinente) otros eventos a la cola.
 
@@ -503,7 +503,7 @@ El algoritmo de simulación sigue el esquema estándar de eventos discretos:
     \item Exportar resultados
 \end{enumerate}
 
-Los eventos se generan de acuerdo a los mecanismos descritos en la orden del proyecto, teninedo en cuenta las consideraciones explicadas en la Sección \ref{sec:general_approach}
+Los eventos se generan de acuerdo a los mecanismos descritos en la orden del proyecto, teniendo en cuenta las consideraciones explicadas en la Sección \ref{sec:general_approach}
 
 \section{Colección de Estadísticas}
 
@@ -525,7 +525,7 @@ La simulación recolecta las siguientes estadísticas en intervalos de tiempo di
 % ============================================================================
 \chapter{Resultados}
 
-\section{Experimento 1: Evolución Simple}
+\section{Experimento 1: Evolución Simple}\label{sec:exp1}
 
 \subsection{Objetivo}
 
@@ -534,8 +534,7 @@ Estudiar cómo evoluciona la población en el tiempo bajo los parámetros demogr
 \subsection{Parámetros Iniciales}
 
 \begin{itemize}
-	\item Población inicial: \texttt{1000}
-	\item Población inicial masculina: \texttt{500}
+	\item Población inicial: \texttt{2000}
 	\item Duración de simulación: \texttt{100}
 	\item Número de réplicas por experimento: \texttt{500}
 	\item Edad mínima de fertilidad: \texttt{12}
@@ -553,7 +552,7 @@ Los datos revelan una clara tendencia a la extinción, con una disminución casi
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{simple_population_1000.png}
+    \includegraphics[width=0.9\textwidth]{simple_population_2000.png}
     \caption{Evolución de la población por sexo. Se muestran hombres (naranja), mujeres (verde) y población total (azul). Puede apreciarse la clara tendencia a la extinción, que llega antes del año 70 en todas las simulaciones realizadas.}
     \label{fig:pop_evolution}
 \end{figure}
@@ -561,55 +560,145 @@ Los datos revelan una clara tendencia a la extinción, con una disminución casi
 
 \subsubsection{Dinámicas de Sexos}
 
-El comportamiento de la distribución de sexos en la población es cuanto menos curioso. En los primeros años puede apreciarse una tendencia a la supervivencia de los hombres sobre las mujeres (valores elevados de $M/F$), mientras que hacia el final de la simulación esta tendencia se invierte ligeramente (al acercarse la extinción, las más mínimas diferencias en los números de hombres y mujeres hacen variar significativamente este valor); lo cual puede revisarse en la Figura \ref{fig:sex_ratio}. Al revisar los datos, puede verse que la última superviviente de las simulaciones fue una mujer (que se convirtió en una leyenda viviendo sola por 19 años en alguna simulación). Estos valores pudieran explicarse a través de las diferencias en las tablas de probabilidades de mortalidad por sexo, donde las mujeres tienen mayor probabilidad de fallecer a edades tempranas, mientras los hombres son más propensos a fallecer pasados los 76 años. Se considera que la razón por la que el último poblador sea una mujer es puramente estocástica, aunque se invita al lector a profundizar en este resultado.
+El comportamiento de la distribución de sexos en la población es cuanto menos curioso. En los primeros años puede apreciarse una tendencia a la supervivencia de los hombres sobre las mujeres (valores elevados de $M/F$), mientras que hacia el final de la simulación esta tendencia se invierte ligeramente (al acercarse la extinción, las más mínimas diferencias en los números de hombres y mujeres hacen variar significativamente este valor); lo cual puede revisarse en la Figura \ref{fig:sex_ratio}. En general, y como es de esperar al revisar las tablas de probabilidad de mortalidad, los hombres en conjunto son más propensos a sobrevivir que las mujeres. Al revisar los datos, puede verse que los últimos supervivientes de las simulaciones fueron indistintamente hombre o mujer (que se convirtieron en leyendas viviendo solos por 12 años en sus respectivas simulaciones). La explicación de que al final de la simulación el valor de la proporción de sexos caiga a 0 rápidamente es que, al ser una razón, se tomó la decisión de diseño de hacerlo 0 al no quedar ninguna persona de algún sexo (i. e. \texttt{sex\_ratio = 0.0} si \texttt{male\_count = 0} o \texttt{female\_count = 0}).
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{simple_sratio_1000.png}
+    \includegraphics[width=0.9\textwidth]{simple_sratio_2000.png}
     \caption{Razón de sexos (M/F) en función del tiempo de las simulaciones.}
     \label{fig:sex_ratio}
 \end{figure}
 
 \subsubsection{Edad Promedio}
 
-La edad promedio muestra un comportamiento predecible en la Figura \ref{fig:avg_age}. Al aumentar con la edad la probabilidad de fallecer, es normal que en los primeros años fallezcan las personas más viejas y se propicie una estabilización de la media de las edades alrededor de 30 años antes de llegar al 10mo año de simulación. Sin embargo, al seguir avanzando el tiempo las personas empiezan a envejecer, lo que, unido con la baja tasa de natalidad presentada, hace que la media de edades vuelva a crecer. A medida que disminuye el número de personas vivas puede presenciarse el ruido estadístico introducido, hasta que queda la última superviviente y solo se grafica su edad.
+La edad promedio muestra un comportamiento predecible en la Figura \ref{fig:avg_age}. Al aumentar con la edad la probabilidad de fallecer, es normal que en los primeros años fallezcan las personas más viejas y se propicie una estabilización de la media de las edades alrededor de 30 años antes de llegar al 10mo año de simulación. Sin embargo, al seguir avanzando el tiempo las personas empiezan a envejecer, lo que, unido con la baja tasa de natalidad presentada, hace que la media de edades vuelva a crecer. A medida que disminuye el número de personas vivas puede presenciarse el ruido estadístico introducido, hasta que queda el último superviviente y solo se grafica su edad.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{simple_age_1000.png}
+    \includegraphics[width=0.9\textwidth]{simple_age_2000.png}
     \caption{Edad promedio de la población en función del tiempo.}
     \label{fig:avg_age}
 \end{figure}
 
-\section{Experimento 2: Análisis de Sensibilidad Paramétrica}
+\section{Experimento 2: Análisis de Sensibilidad Paramétrica}\label{sec:exp2}
 
 \subsection{Objetivo}
 
-Evaluar cómo cambios en parámetros demográficos clave afectan el resultado final de la simulación.
+Evaluar cómo cambios en la proporción inicial de hombres en la población afectan la dinámica y la supervivencia poblacional a largo plazo.
 
-\subsection{Parámetro Variado}
+\subsection{Parámetros Iniciales}
 
-\texttt{[PLACEHOLDER: Especificar qué parámetro fue variado y rango de valores]}
+\begin{itemize}
+	\item Población inicial: \texttt{2000}
+	\item Población inicial masculina (variado): \texttt{[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
+	\item Duración de simulación: \texttt{30}
+	\item Número de réplicas por parámetro: \texttt{250}
+	\item Edad mínima de fertilidad: \texttt{12}
+	\item Edad máxima de fertilidad: \texttt{70}
+	\item Edad mínima de emparejamiento: \texttt{12}
+	\item Edad máxima: \texttt{125}
+	\item Semilla base: \texttt{16}
+\end{itemize}
+
+Se varió la población inicial masculina desde \texttt{0} (población completamente femenina) hasta \texttt{2000} (población completamente masculina) en intervalos de \texttt{200} individuos. Para cada valor del parámetro se ejecutaron \texttt{250} simulaciones independientes con semillas aleatorias distintas, permitiendo así estimar la media y el error estándar de los resultados para un análisis estadístico robusto.
 
 \subsection{Resultados}
 
+\subsubsection{Dinámica Poblacional}
+
+ El análisis de la Figura \ref{fig:param_pop} revela una situación un tanto curiosa y que puede ser de cierta forma esperada desde el conocimiento de las tablas de probabilidad de mortalidad, claramente desbalanceadas hacia la mujer (i. e. las mujeres tienen generalmente mayor probabilidad de fallecer). La población pasados 30 años era de 2 personas aproximadamente cuando todas eran mujeres (menor valor obtenido), mientras que era de 10 personas aproximadamente cuando todos eran hombres (mayor valor obtenido). Este valor no debe engañarnos y hacernos pensar que una població de solo hombres es más propensa a sobrevivir, pues al pasar el tiempo y no poder recuperarse la producción con nacimientos de nuevos pobladores, la extinción es casi segura. El valor ideal para la población masculina podría fijarse entre 200 y 400, ya que entre estos valores se puede apreciar un mayor equilibrio entre los pobladores de ambos sexos, lo que lo hace prometedor a largo plazo (a pesar de encontrarse ya prácticamente extinta la población).
+
 \begin{figure}[h]
     \centering
-    % Placeholder box for parameter comparison plot
-    \fbox{\parbox{0.75\textwidth}{\centering \path{\detokenize{[PLACEHOLDER: plots/param_population.png]}}}}
-    \caption{Población final en función del parámetro variado.}
+    \includegraphics[width=0.9\textwidth]{param_population_male.png}
+    \caption{Población final en función de la proporción inicial de hombres. Se muestran la media y bandas de error estándar (media $\pm$ SE) para 250 réplicas por valor de parámetro.}
     \label{fig:param_pop}
 \end{figure}
 
-\texttt{[PLACEHOLDER: Análisis de sensibilidad y conclusiones]}
+\subsubsection{Dinámicas de Sexos}
 
-\section{Análisis de Variabilidad}
+La razón de sexos (M/F) exhibe un comportamiento altamente sensible a la condición inicial, con implicaciones profundas para la dinámica reproductiva. Como se observa en la Figura \ref{fig:param_sratio} y como se comentaba anteriormente, la distribución ideal de $0.5 - 2.0$ se encuentra entre los valores de población inicial masculina entre $200$ y $600$, sugiriendo que explorar la evolución a largo plazo de una población con estos valores iniciales puede resultar interesante.
 
-\texttt{[PLACEHOLDER: Discusión de la variabilidad inter-réplica, posibles fuentes de variación, etc.]}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{param_sratio_male.png}
+    \caption{Razón de sexos (M/F) en función de la población inicial masculina. Las bandas de error muestran el error estándar a través de las 250 réplicas.}
+    \label{fig:param_sratio}
+\end{figure}
 
-\section{Validación del Modelo}
+\subsubsection{Edad Promedio}
 
-\texttt{[PLACEHOLDER: Discusión de mecanismos de validación (comparación con datos reales si están disponibles, análisis de casos límite, etc.)]}
+La edad promedio final mostrada en la Figura \ref{fig:param_age} refleja que los extremos de distribución de sexos (0 y 2000 hombres iniciales) producen poblaciones significativamente más envejecidas, con edades promedio superiores a 44 años, lo cual tiene sentido debido a que no se producen nacimientos prácticamente y la población tiende a envejecer constantemente. Un efecto similar puede observarse para los valores más altos de población inicial masculina, donde la edad y la cantidad de supervivientes está ampliamente influenciada por la mayor predisposición a la supervivencia de los hombres y la baja tasa de natalidad esperada al haber menor cantidad de mujeres presentes en la población. Nuevamente, los mejores valores son observados para valores iniciales de población masculina entre $200$ y $800$, dado que una población más joven indica una mayor probabilidad de regenerarse en el tiempo debido a la mayor probabilidad de reproducción de las personas en edades jóvenes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{param_age_male.png}
+    \caption{Edad promedio final en función de la población inicial masculina. Se representan la media y el error estándar para las 250 réplicas. Poblaciones con distribuciones de sexos más balanceadas resultan en estructuras etarias ligeramente más jóvenes, reflejando una tasa de reemplazo generacional superior.}
+    \label{fig:param_age}
+\end{figure}
+
+El análisis de sensibilidad paramétrica demuestra que la viabilidad poblacional depende de un delicado equilibrio entre la proporción de sexos y la capacidad reproductiva emergente. Las simulaciones indican que poblaciones con aproximadamente 60-70\% de hombres iniciales (correspondiente a 1200-1400 individuos de una población de 2000) maximizan las perspectivas de supervivencia a corto plazo en el horizonte de 30 años, mientras poblaciones con aproximadamente 10-40\% de hombres iniciales (correspondiente a 200-800 individuos de una población de 2000) sugieren mayor supervivencia a largo plazo. Este resultado tiene implicaciones para la comprensión de poblaciones reales sometidas a desequilibrios severos de sexos, ya sea por fuertes mortalidades selectivas o migraciones diferenciadas.
+
+\section{Experimento 3: Evolución simple con distribución de sexos fija}
+
+\subsection{Objetivo}
+
+Estudiar cómo evoluciona la población en el tiempo bajo los parámetros demográficos especificados y con una distribución de sexos fija que beneficia la cantidad de mujeres.
+
+\subsection{Parámetros Iniciales}
+
+\begin{itemize}
+	\item Población inicial: \texttt{2000}
+	\item Población inicial masculina: \texttt{500}
+	\item Duración de simulación: \texttt{100}
+	\item Número de réplicas por experimento: \texttt{500}
+	\item Edad mínima de fertilidad: \texttt{12}
+	\item Edad máxima de fertilidad: \texttt{70}
+	\item Edad mínima de emparejamiento: \texttt{12}
+	\item Edad máxima: \texttt{125}
+	\item Semilla: \texttt{16}
+\end{itemize}
+
+A partir de los resultados obtenidos en el experimento anterior \ref{sec:exp2} que sitúan la situación más prometedora a futuro alrededor de una distribución cercana al $25\%$ de hombres iniciales (correspondiente a aproximadamente $500$ individuos de una población de $2000$), se decidió correr nuevamente la simulación a largo plazo con este ratio para comparar la evolución poblacional y evaluar si la proporción de sexos mejorada produce dinámicas más favorables en el horizonte de 100 años.
+
+\subsection{Resultados}
+
+\subsubsection{Dinámica Poblacional}
+
+Contrario a las expectativas iniciales basadas en los hallazgos del Experimento 2, la población con distribución de sexos 500:1500 (M:F) exhibe una tendencia de extinción prácticamente idéntica a la observada en el Experimento 1. Como puede observarse en la Figura \ref{fig:pop_evolution_exp3}, la población declina de manera casi exponencial durante los primeros 40 años y prácticamente llegando a la extinción antes del año 50. La tasa de declinación es extremadamente rápida en los primeros 10 años, donde la población pasa de 2000 a aproximadamente 217 individuos. Este resultado sugiere que la limitación crítica para la viabilidad poblacional no es únicamente la proporción de sexos en términos de cantidad, sino más bien la interacción compleja entre la estructura etaria inicial, las tasas de mortalidad, y la tasa de fertilidad de las mujeres en edad reproductiva. Un ratio de hombres al 25\% aparentemente no proporciona la capacidad reproductiva suficiente para contrarrestar la mortalidad observada en la población.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{simple_population_2000_500.png}
+    \caption{Evolución de la población por sexo usando 500 hombres y 1500 mujeres iniciales en 100 años de simulación (500 réplicas). Se muestran hombres (naranja), mujeres (verde) y población total (azul) con bandas de error estándar. La tendencia a la extinción es pronunciada y comparable a la vista en la Figura \ref{fig:pop_evolution}.}
+    \label{fig:pop_evolution_exp3}
+\end{figure}
+
+\subsubsection{Dinámicas de Sexos}
+
+La razón de sexos muestra un comportamiento que refleja selectivamente la supervivencia diferencial por sexo bajo esta configuración inicial. Como se ilustra en la Figura \ref{fig:sex_ratio_exp3}, la razón M/F comienza en $0.33$ (correspondiente a 500 hombres sobre 1500 mujeres) pero aumenta progresivamente durante los primeros 30 años de simulación, alcanzando un valor óptimo cerca del año 20 antes de desbalancearse y caer nuevamente hacia 0 en los años finales. Este patrón sugiere que en las primeras décadas, cuando aún hay individuos vivos, los hombres son relativamente favorecidos en supervivencia, lo que causa una convergencia de la razón de sexos hacia $2.0$. Sin embargo, la caída final de la razón hacia $0$ refleja la extinción prácticamente simultánea de ambos sexos.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{simple_sratio_2000_500.png}
+    \caption{Razón de sexos (M/F) en función del tiempo de las simulaciones. Se observa un aumento inicial seguido de estabilización y posterior declinación hacia cero a medida que la población se extingue.}
+    \label{fig:sex_ratio_exp3}
+\end{figure}
+
+\subsubsection{Edad Promedio}
+
+La edad promedio presentada en la Figura \ref{fig:avg_age_exp3} sigue el patrón esperado de una población en extinción. Comienza alrededor de 51 años (reflejando la distribución uniforme inicial de edades en [0, 100]), desciende rápidamente a aproximadamente 28-30 años entre los años 5 y 15, donde se estabiliza por un período. Durante esta estabilización, la población mantiene una estructura etaria relativamente joven debido a la presencia de individuos en rangos reproductivos. Sin embargo, a partir del año 25-30, conforme la población envejece y disminuye drásticamente, la edad promedio comienza a aumentar nuevamente, alcanzando valores superiores a 45 años por el año 55. Este repunte tardío refleja el envejecimiento de los últimos supervivientes sin reemplazo generacional, dado que la baja tasa de natalidad no compensa las muertes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{simple_age_2000_500.png}
+    \caption{Edad promedio de la población en función del tiempo. Se evidencia el descenso inicial seguido de estabilización y posterior envejecimiento conforme la población se aproxima a la extinción.}
+    \label{fig:avg_age_exp3}
+\end{figure}
+
+Queda demostrado que ajustar la proporción inicial de sexos hacia una mayor representación femenina (500 hombres: 1500 mujeres) no logra mitigar la problemática fundamental identificada en los experimentos previos. La extinción poblacional persiste con dinámicas prácticamente equivalentes a las de \ref{sec:exp1}, sugiriendo que los parámetros demográficos fundamentales del modelo (especialmente las tasas de fertilidad, mortalidad, y formación de parejas) pueden requerir una revisión más profunda para permitir una dinámica poblacional estable o al menos de larga duración.
+
+
 
 % ============================================================================
 % CAPÍTULO 5: CONCLUSIONES
@@ -618,27 +707,21 @@ Evaluar cómo cambios en parámetros demográficos clave afectan el resultado fi
 
 \section{Resumen de Hallazgos}
 
-\texttt{[PLACEHOLDER: Resumen de los hallazgos principales del proyecto]}
+A través de tres experimentos de simulación demográfica se ha investigado la dinámica poblacional bajo distintos regímenes de parámetros iniciales. El Experimento 1 reveló una tendencia pronunciada a la extinción poblacional en 500 réplicas independientes de 100 años de simulación, con la población alcanzando valores próximos a cero antes del año 70. Esta extinción fue acompañada por una dinámica de sexos en la cual los hombres mostraron supervivencia relativa superior a las mujeres en los primeros años, según se evidenció en la razón de sexos. La edad promedio exhibió un descenso inicial (años 0-10) reflejando la eliminación de individuos envejecidos de la cohorte inicial, seguida de un aumento progresivo indicativo del envejecimiento sin reemplazo generacional.
+
+El Experimento 2 de análisis de sensibilidad paramétrica demostró que la proporción inicial de hombres es un factor de importancia en la dinámica poblacional a corto plazo (30 años). Se identificó que proporciones pequeñas de hombres iniciales (aproximadamente 30-70\%) resultaban en poblaciones finales de mayor tamaño comparado con los extremos (0\% o 100\% de hombres). Específicamente, se observó un máximo de viabilidad poblacional alrededor de 200-800 hombres iniciales de una población de 2000. Sin embargo, incluso bajo estas condiciones favorables, la población final era de menos de 10 individuos tras 30 años, indicando que la mejora en la proporción de sexos solo retarda moderadamente la extinción.
+
+El Experimento 3 confirmó que el ajuste de la proporción de sexos hacia una mayor representación femenina (25\% de hombres iniciales) no logra alterar significativamente las dinámicas de extinción. A pesar de esta reconfiguración, la población exhibió una declinación exponencial comparable a la del Experimento 1, llegando a menos de 150 individuos al año 30 y aproximándose a la extinción antes del año 50. Esto sugiere que la problemática fundamental no radica exclusivamente en la proporción de sexos, sino en la dinámica subyacente de tasas de mortalidad y natalidad del modelo.
 
 \section{Limitaciones del Modelo}
 
-\texttt{[PLACEHOLDER: Discusión de limitaciones y simplificaciones del modelo]}
+A lo largo del análisis se identificaron varias limitaciones significativas en la estructura demográfica del modelo de simulación. La primera y más evidente es el desequilibrio entre las tasas de mortalidad y natalidad. Las tablas de probabilidad de mortalidad, tal como se describen en el proyecto, producen tasas de defunción que superan sistemáticamente a las tasas de natalidad, impidiendo que la población pueda mantenerse o crecer bajo ninguna configuración paramétrica probada. Esto resulta particularmente problemático considerando que se inicializa la población con edades distribuidas uniformemente en $[0, 100]$, lo cual deja aproximadamente la mitad de la población fuera de los rangos reproductivos, ampliando aún más la brecha entre defunciones y nacimientos.
 
-\section{Extensiones Futuras}
+Una segunda limitación es la capacidad reproductiva restringida del modelo. La tasa de fertilidad, que depende de disponibilidad de parejas fértiles, salud de la madre durante la gestación, y otras condiciones estocásticas, resultó ser insuficiente en todas las configuraciones simuladas para mantener el reemplazo poblacional. La dinámica de formación de parejas, además, introduce restricciones adicionales que reducen la probabilidad efectiva de reproducción.
 
-Posibles mejoras y extensiones del modelo incluyen:
+Una tercera limitación concierne a la representación de edades iniciales. La asignación uniforme de edades en $[0, 100]$ años, aunque computacionalmente simple, no refleja la estructura etaria típica de poblaciones reales, las cuales generalmente exhiben patrones de pirámide poblacional con concentración en edades más jóvenes. Esta desviación podría contribuir al sesgo hacia la extinción observado.
 
-\begin{itemize}
-    \item Incorporación de migración
-    \item Modelado de cambios en preferencias demográficas a lo largo del tiempo
-    \item Inclusión de eventos económicos o sociales que afecten las tasas de natalidad/mortalidad
-    \item Validación con datos demográficos reales
-    \item Análisis de escenarios alternativos (catástrofes, pandemias, etc.)
-\end{itemize}
-
-\section{Reflexión Final}
-
-\texttt{[PLACEHOLDER: Reflexiones personales sobre el proyecto, aprendizajes obtenidos, etc.]}
+Finalmente, el modelo incorpora eventos adicionales no especificados en la orden (específicamente el evento \texttt{YearEndEvent}) para distribuir eventos como muertes y separaciones mes a mes. Si bien esta aproximación añade realismo, también introduce complejidad que podría estar interactuando de manera no prevista con los parámetros de probabilidad originales, exacerbando potencialmente el desequilibrio demográfico.
 
 % ============================================================================
 % BIBLIOGRAFÍA

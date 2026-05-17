@@ -38,13 +38,13 @@ function create_simple_evolution_experiment(seed::Union{Int64, Nothing})::Simple
         500,
         seed,
         "Simulation of population evolution over 100 years with fixed parameters. " *
-        "Used population_size=5000 with 0.5 uniform distribution and seed=16. " *
+        "Used population_size=2000 with male_population=300 and seed=16. " *
         "Results show mean and standard error across multiple runs."
     )
     
     sim_config = SimConfig(
         population_size = 2000,
-        male_population = 500,
+        male_population = 300,
         fertility_age_min = 12,
         fertility_age_max = 70,
         simulation_years = 100,

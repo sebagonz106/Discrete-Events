@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260517_040253",
+  "experiment_name": "Parameter Sensitivity: Male Population Size",
+  "description": "Comparison of how initial male population size affects population dynamics. Each point represents mean across multiple runs with error bars (standard error).",
+  "num_simulations": 250,
+  "seed": 16,
+  "simulation_config": {
+    "population_size": 2000,
+    "male_population": -1,
+    "fertility_age_min": 12,
+    "fertility_age_max": 70,
+    "simulation_years": 30,
+    "age_max": 125,
+    "age_distribution_interval": 10
+  },
+  "extra_parameters": {
+    "varied_parameter": "male_population",
+    "experiment_type": "parameter_comparison",
+    "parameter_values": ["0", "200", "400", "600", "800", "1000", "1200", "1400", "1600", "1800", "2000"]
+  }
+}

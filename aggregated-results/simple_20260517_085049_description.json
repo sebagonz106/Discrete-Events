@@ -1,0 +1,16 @@
+{
+  "experiment_description": "Simulation of population evolution over 100 years with fixed parameters. Used population_size=5000 with 0.5 uniform distribution and seed=16. Results show mean and standard error across multiple runs.",
+  "experiment_name": "Population Evolution (100 years)",
+  "parameters": {
+    "simulation_years": 100,
+    "num_simulations": 500,
+    "population_size": 2000
+  },
+  "axes": {
+    "x": "year",
+    "y_columns": ["population_mean", "sex_ratio_mean", "avg_age_mean"],
+    "error_columns": ["population_se", "sex_ratio_se", "avg_age_se"]
+  },
+  "data_file": "simple_20260517_085049_results.csv",
+  "type": "simple_evolution"
+}
